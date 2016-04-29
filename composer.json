@@ -3,8 +3,8 @@
   "type": "library",
   "version": "3.0.0",
   "description": "API client library for the MailChimp",
-  "keywords": ["email", "api"],
-  "homepage": "https://bitbucket.org/mailchimp/mailchimp-api-php",
+  "keywords": ["email", "api","mailchimp"],
+  "homepage": "https://github.com/ebizmarts/mailchimp-lib",
   "license": "MIT",
   "authors": [{"name": "Ebizmarts Corp", "email": "info@ebizmarts.com", "homepage": "http://ebizmarts.com", "role": "Developer"}],
   "require": {
