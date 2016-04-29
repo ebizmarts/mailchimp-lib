@@ -21,7 +21,7 @@ class Mailchimp_Lists
     /**
      * @param Mailchimp $m
      */
-    public function __contruct(Mailchimp $m)
+    public function __construct(Mailchimp $m)
     {
         $this->master = $m;
     }
