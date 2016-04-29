@@ -70,12 +70,18 @@ class Mailchimp
     }
     public function call($url,$params,$method='GET')
     {
-        $params = json_encode($params);
+        if(count($params))
+        {
+            $params = json_encode($params);
+        }
 
         $ch = $this->_ch;
         curl_setopt($ch, CURLOPT_URL, $this->_root . $url);
+        if(count($params))
+        {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+        }
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
         curl_setopt($ch, CURLOPT_VERBOSE, $this->_debug);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST,$method);
 
@@ -89,17 +95,9 @@ class Mailchimp
         $result = json_decode($response_body, true);
 
         if(floor($info['http_code'] / 100) >= 4) {
-            throw $this->castError($result);
+            throw new Mailchimp_Error($result['title'].' : '.$result['detail']);
         }
 
         return $result;
-    }
-    public function castError($result) {
-        if ($result['status'] !== 'error' || !$result['name']) {
-            throw new Mailchimp_Error('We received an unexpected error: ' . json_encode($result));
-        }
-
-        $class = (isset(self::$error_map[$result['name']])) ? self::$error_map[$result['name']] : 'Mailchimp_Error';
-        return new $class($result['error'], $result['code']);
     }
 }

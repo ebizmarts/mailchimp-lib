@@ -11,3 +11,4 @@
  * @file: Exceptions.php
  */
 class Mailchimp_Error extends Exception{}
+class Mailchimp_HttpError extends Mailchimp_Error {}
