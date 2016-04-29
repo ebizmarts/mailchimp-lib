@@ -11,8 +11,9 @@
  * @file: Mailchimp.php
  */
 
-require_once('Malchimp/Lists.php');
-require_once('Mailchimp/Exceptions.php');
+require_once 'Mailchimp/Lists.php';
+require_once 'Mailchimp/Exceptions.php';
+require_once 'Mailchimp/Root.php';
 
 
 class Mailchimp
