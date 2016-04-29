@@ -6,7 +6,7 @@
   "keywords": ["email", "api","mailchimp"],
   "homepage": "https://github.com/ebizmarts/mailchimp-lib",
   "license": "MIT",
-  "authors": [{"name": "Ebizmarts Corp", "email": "info@ebizmarts.com", "homepage": "http://ebizmarts.com", "role": "Developer"}],
+  "authors": [{"name": "Ebizmarts Corp.", "email": "info@ebizmarts.com", "homepage": "http://ebizmarts.com", "role": "Developer"}],
   "require": {
     "php": ">=5.2.0"
   },
