@@ -20,7 +20,7 @@ class Mailchimp_Root
     /**
      * @param Mailchimp $m
      */
-    public function __contruct(Mailchimp $m)
+    public function __construct(Mailchimp $m)
     {
         $this->master = $m;
     }

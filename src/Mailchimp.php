@@ -18,10 +18,11 @@ require_once 'Mailchimp/Root.php';
 
 class Mailchimp
 {
-    public $apiKey;
-    public $ch;
-    public $root    = 'https://api.mailchimp.com/3.0';
-    public $debug   = false;
+    protected $_apiKey;
+    protected $_ch;
+    protected $_root    = 'https://api.mailchimp.com/3.0';
+    protected $_debug   = false;
+
     const POST      = 'POST';
     const GET       = 'GET';
 
@@ -31,51 +32,53 @@ class Mailchimp
         {
             throw new Mailchimp_Error('You must provide a MailChimp API key');
         }
-        $this->apiKey   = $apiKey;
+        $this->_apiKey   = $apiKey;
         $dc             = 'us1';
-        if (strstr($this->apiKey, "-")){
-            list($key, $dc) = explode("-", $this->apiKey, 2);
+        if (strstr($this->_apiKey, "-")){
+            list($key, $dc) = explode("-", $this->_apiKey, 2);
             if (!$dc) {
                 $dc = "us1";
             }
         }
-        $this->root = str_replace('https://api', 'https://' . $dc . '.api', $this->root);
-        $this->root = rtrim($this->root, '/') . '/';
+        $this->_root = str_replace('https://api', 'https://' . $dc . '.api', $this->_root);
+        $this->_root = rtrim($this->_root, '/') . '/';
 
         if (!isset($opts['timeout']) || !is_int($opts['timeout'])){
             $opts['timeout'] = 600;
         }
         if (isset($opts['debug'])){
-            $this->debug = true;
+            $this->_debug = true;
         }
 
 
-        $this->ch = curl_init();
+        $this->_ch = curl_init();
 
         if (isset($opts['CURLOPT_FOLLOWLOCATION']) && $opts['CURLOPT_FOLLOWLOCATION'] === true) {
-            curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true);
         }
 
-        curl_setopt($this->ch, CURLOPT_USERAGENT, 'Ebizmart-MailChimp-PHP/3.0.0');
-        curl_setopt($this->ch, CURLOPT_POST, true);
-        curl_setopt($this->ch, CURLOPT_HEADER, false);
-        curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, 30);
-        curl_setopt($this->ch, CURLOPT_TIMEOUT, $opts['timeout']);
+        curl_setopt($this->_ch, CURLOPT_USERAGENT, 'Ebizmart-MailChimp-PHP/3.0.0');
+        curl_setopt($this->_ch, CURLOPT_HEADER, false);
+        curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($this->_ch, CURLOPT_TIMEOUT, $opts['timeout']);
+        curl_setopt($this->_ch, CURLOPT_USERPWD, "noname:".$this->_apiKey);
 
         $this->lists= new Mailchimp_Lists($this);
+        $this->root = new Mailchimp_Root($this);
 
     }
     public function call($url,$params,$method='GET')
     {
-        $params['apikey'] = $this->apiKey;
         $params = json_encode($params);
 
-        $ch = $this->ch;
-        curl_setopt($ch, CURLOPT_URL, $this->root . $url . '.json');
+        $ch = $this->_ch;
+        curl_setopt($ch, CURLOPT_URL, $this->_root . $url);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-        curl_setopt($ch, CURLOPT_VERBOSE, $this->debug);
+        curl_setopt($ch, CURLOPT_VERBOSE, $this->_debug);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST,$method);
+
 
         $response_body = curl_exec($ch);
 
