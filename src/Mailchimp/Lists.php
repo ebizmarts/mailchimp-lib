@@ -14,6 +14,43 @@
 class Mailchimp_Lists extends Mailchimp_Abstract
 {
     /**
+     * @var Mailchimp_ListsSegments
+     */
+    public $segments;
+    /**
+     * @var Mailchimp_ListsAbuseReports
+     */
+    public $abuseReports;
+    /**
+     * @var Mailchimp_ListsActivity
+     */
+    public $activity;
+    /**
+     * @var Mailchimp_ListsClients
+     */
+    public $clients;
+    /**
+     * @var Mailchimp_ListsGrowthHistory
+     */
+    public $growthHistory;
+    /**
+     * @var Mailchimp_ListsInterestCategory
+     */
+    public $interestCategory;
+    /**
+     * @var Mailchimp_ListsMembers
+     */
+    public $members;
+    /**
+     * @var Mailchimp_ListsMergeFields
+     */
+    public $mergeFields;
+    /**
+     * @var Mailchimp_ListsMergeFields
+     */
+    public $webhooks;
+
+    /**
      * @param $name
      * @param $contact
      *          company *   (The company name for the list)

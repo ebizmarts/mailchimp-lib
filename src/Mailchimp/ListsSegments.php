@@ -12,6 +12,11 @@
  */
 class Mailchimp_ListsSegments extends Mailchimp_Abstract
 {
+    /**
+     * @var Mailchimp_ListsSegmentsMembers
+     */
+    public $segmentMembers;
+
     public function getInformation($listId,$fields=null)
     {
         $_params = array();

@@ -7,13 +7,13 @@
  * @author Ebizmarts Team <info@ebizmarts.com>
  * @copyright Ebizmarts (http://ebizmarts.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
- * @date: 4/29/16 3:47 PM
- * @file: Automation.php
+ * @date: 5/2/16 4:12 PM
+ * @file: AutomationEmails.php
  */
-class Mailchimp_Automation extends Mailchimp_Abstract
+class Mailchimp_AutomationEmails extends Mailchimp_Abstract
 {
     /**
-     * @var Mailchimp_AutomationEmails
+     * @var Mailchimp_AutomationEmailsQuque
      */
-    public $emails;
+    public $queue;
 }

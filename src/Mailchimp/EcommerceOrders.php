@@ -13,4 +13,8 @@
 
 class Mailchimp_EcommerceOrders extends Mailchimp_Abstract
 {
+    /**
+     * @var Mailchimp_EcommerceOrdersLines
+     */
+    public $lines;
 }

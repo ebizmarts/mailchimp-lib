@@ -12,5 +12,8 @@
  */
 class Mailchimp_EcommerceProducts extends Mailchimp_Abstract
 {
-
+    /**
+     * @var Mailchimp_EcommerceProductsVariants
+     */
+    public $variants;
 }
