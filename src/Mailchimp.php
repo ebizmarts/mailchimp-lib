@@ -11,9 +11,24 @@
  * @file: Mailchimp.php
  */
 
+require_once 'Mailchimp/Abstract.php';
 require_once 'Mailchimp/Lists.php';
 require_once 'Mailchimp/Exceptions.php';
 require_once 'Mailchimp/Root.php';
+require_once 'Mailchimp/AuthorizedApps.php';
+require_once 'Mailchimp/Automation.php';
+require_once 'Mailchimp/BatchOperations.php';
+require_once 'Mailchimp/CampaignFolders.php';
+require_once 'Mailchimp/Campaigns.php';
+require_once 'Mailchimp/Conversations.php';
+require_once 'Mailchimp/EcommerceStores.php';
+require_once 'Mailchimp/EcommerceCarts.php';
+require_once 'Mailchimp/EcommerceCustomers.php';
+require_once 'Mailchimp/EcommerceOrders.php';
+require_once 'Mailchimp/EcommerceProducts.php';
+require_once 'Mailchimp/EcommerceProductsVariants.php';
+require_once 'Mailchimp/FileManagerFiles.php';
+require_once 'Mailchimp/FileManagerFolders.php';
 
 
 class Mailchimp
@@ -64,8 +79,25 @@ class Mailchimp
         curl_setopt($this->_ch, CURLOPT_TIMEOUT, $opts['timeout']);
         curl_setopt($this->_ch, CURLOPT_USERPWD, "noname:".$this->_apiKey);
 
-        $this->lists= new Mailchimp_Lists($this);
-        $this->root = new Mailchimp_Root($this);
+        $this->lists                            = new Mailchimp_Lists($this);
+        $this->lists->segments                  = new Mailchimp_ListsSegments($this);
+        $this->root                             = new Mailchimp_Root($this);
+        $this->authorizedApps                   = new Mailchimp_AuthorizedApps($this);
+        $this->automation                       = new Mailchimp_Automation($this);
+        $this->batchOperation                   = new Mailchimp_BatchOperations($this);
+        $this->campaignFolders                  = new Mailchimp_CampaignFolders($this);
+        $this->campaigns                        = new Mailchimp_Campaigns($this);
+        $this->conversations                    = new Mailchimp_Conversations($this);
+        $this->ecommerce                        = new Mailchimp_Abstract($this);
+        $this->ecommerce->stores                = new Mailchimp_EcommerceStore($this);
+        $this->ecommerce->carts                 = new Mailchimp_EcommerceCarts($this);
+        $this->ecommerce->customers             = new Mailchimp_EcommerceCustomers($this);
+        $this->ecommerce->orders                = new Mailchimp_EcommerceOrders($this);
+        $this->ecommerce->orders->lines         = new Mailchimp_EcommerceOrdersLines($this);
+        $this->ecommerce->products              = new Mailchimp_EcommerceProducts($this);
+        $this->ecommerce->products->variants    = new Mailchimp_EcommerceProductsVariants($this);
+        $this->fileManagerFiles                 = new Mailchimp_FileManagerFiles($this);
+        $this->fileManagerFolders               = new Mailchimp_FileManagerFolders($this);
 
     }
     public function call($url,$params,$method='GET')

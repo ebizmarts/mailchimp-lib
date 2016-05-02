@@ -7,22 +7,18 @@
  * @author Ebizmarts Team <info@ebizmarts.com>
  * @copyright Ebizmarts (http://ebizmarts.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
- * @date: 4/29/16 1:18 PM
- * @file: Root.php
+ * @date: 5/2/16 2:00 PM
+ * @file: ListsSegments.php
  */
-class Mailchimp_Root extends Mailchimp_Abstract
+class Mailchimp_ListsSegments extends Mailchimp_Abstract
 {
-    public function info($fields=null,$excludeFields=null)
+    public function getInformation($listId,$fields=null)
     {
         $_params = array();
         if($fields)
         {
             $_params['fields'] = $fields;
         }
-        if($excludeFields)
-        {
-            $_params['exclude_fields'] = $excludeFields;
-        }
-        return $this->master->call('',$_params,Mailchimp::GET);
+        return $this->master->call('lists/'.$listId.'/segments',$_params,Mailchimp::GET);
     }
 }

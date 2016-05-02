@@ -11,21 +11,8 @@
  * @file: Lists.php
  */
 
-class Mailchimp_Lists
+class Mailchimp_Lists extends Mailchimp_Abstract
 {
-    /*
-     * @var Mailchimp
-     */
-    protected $master;
-
-    /**
-     * @param Mailchimp $m
-     */
-    public function __construct(Mailchimp $m)
-    {
-        $this->master = $m;
-    }
-
     /**
      * @param $name
      * @param $contact
