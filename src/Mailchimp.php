@@ -74,6 +74,8 @@ class Mailchimp
 
     const POST      = 'POST';
     const GET       = 'GET';
+    const PATCH     = 'PATCH';
+    const DELETE    = 'DELETE';
 
     public function __construct($apiKey=null,$opts=array())
     {
