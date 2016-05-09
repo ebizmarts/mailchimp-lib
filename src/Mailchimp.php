@@ -16,9 +16,9 @@ require_once 'Mailchimp/Root.php';
 require_once 'Mailchimp/Automation.php';
 require_once 'Mailchimp/AutomationEmails.php';
 require_once 'Mailchimp/AutomationEmailsQueue.php';
+require_once 'Mailchimp/AutomationRemovedSubscribers.php';
 require_once 'Mailchimp/Exceptions.php';
 require_once 'Mailchimp/AuthorizedApps.php';
-require_once 'Mailchimp/Automation.php';
 require_once 'Mailchimp/BatchOperations.php';
 require_once 'Mailchimp/CampaignFolders.php';
 require_once 'Mailchimp/Campaigns.php';
@@ -123,6 +123,7 @@ class Mailchimp
         $this->automation                                   = new Mailchimp_Automation($this);
         $this->automation->emails                           = new Mailchimp_AutomationEmails($this);
         $this->automation->emails->queue                    = new Mailchimp_AutomationEmailsQuque($this);
+        $this->automation->removedSubscribers               = new Mailchimp_AutomationRemovedSubscribers($this);
         $this->batchOperation                               = new Mailchimp_BatchOperations($this);
         $this->campaignFolders                              = new Mailchimp_CampaignFolders($this);
         $this->campaigns                                    = new Mailchimp_Campaigns($this);

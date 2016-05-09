@@ -16,6 +16,10 @@ class Mailchimp_Automation extends Mailchimp_Abstract
      * @var Mailchimp_AutomationEmails
      */
     public $emails;
+    /**
+     * @var Mailchimp_AutomationRemovedSubscribers
+     */
+    public $removedSubscribers;
 
     /**
      * @param null $fields          A comma-separated list of fields to return. Reference parameters of sub-objects with dot notation.
