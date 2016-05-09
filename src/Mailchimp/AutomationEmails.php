@@ -16,4 +16,50 @@ class Mailchimp_AutomationEmails extends Mailchimp_Abstract
      * @var Mailchimp_AutomationEmailsQuque
      */
     public $queue;
+
+    /**
+     * @param $workflowId           The unique id for the Automation workflow.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function getAll($workflowId)
+    {
+        return $this->master->call('automation/'.$workflowId.'/emails',null, Mailchimp::GET);
+    }
+
+    /**
+     * @param $workflowId           The unique id for the Automation workflow.
+     * @param $workflowEmailId      The unique id for the Automation workflow email.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function get($workflowId,$workflowEmailId)
+    {
+        return $this->master->call('automation/'.$workflowId.'/emails/'.$workflowEmailId,null, Mailchimp::GET);
+    }
+
+    /**
+     * @param $workflowId           The unique id for the Automation workflow.
+     * @param $workflowEmailId      The unique id for the Automation workflow email.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function pause($workflowId,$workflowEmailId)
+    {
+        return $this->master->call('automation/'.$workflowId.'/emails/'.$workflowEmailId.'/pause',null, Mailchimp::POST);
+    }
+    /**
+     * @param $workflowId           The unique id for the Automation workflow.
+     * @param $workflowEmailId      The unique id for the Automation workflow email.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function start($workflowId,$workflowEmailId)
+    {
+        return $this->master->call('automation/'.$workflowId.'/emails/'.$workflowEmailId.'/start',null, Mailchimp::POST);
+    }
 }

@@ -10,18 +10,53 @@
  * @date: 4/29/16 3:47 PM
  * @file: AuthorizedApps.php
  */
-class Mailchimp_AuthorizedApps
+class Mailchimp_AuthorizedApps extends Mailchimp_Abstract
 {
     /**
-     * @var Mailchimp
+     * @param $clientId         The client’s unique id/username for authorization.
+     * @param $clientSecret     The client password for authorization.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
      */
-    protected $master;
+    public function add($clientId,$clientSecret)
+    {
+        $_params = array('cliend_id'=>$clientId,'client_secret'=>$clientSecret);
+        return $this->master->call('authorized-apps',$_params,Mailchimp::POST);
+    }
 
     /**
-     * @param Mailchimp $m
+     * @param null $fields          A comma-separated list of fields to return. Reference parameters of sub-objects with dot notation.
+     * @param null $excludeFields   A comma-separated list of fields to exclude. Reference parameters of sub-objects with dot notation.
+     * @param null $count           The number of records to return.
+     * @param null $offset          The number of records from a collection to skip. Iterating over large collections with this parameter can be slow.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
      */
-    public function __construct(Mailchimp $m)
+    public function getAll($fields=null,$excludeFields=null,$count=null,$offset=null)
     {
-        $this->master = $m;
+        $_params = array();
+        if($fields) $_params['fields'] = $fields;
+        if($excludeFields) $_params['exclude_fields'] = $excludeFields;
+        if($count) $_params['count'] = $count;
+        if($offset) $_params['offset'] = $offset;
+        return $this->master->call('authorized-apps',$_params,Mailchimp::GET);
+    }
+
+    /**
+     * @param $appId                The unique id for the connected authorized application.
+     * @param null $fields          A comma-separated list of fields to return. Reference parameters of sub-objects with dot notation.
+     * @param null $excludeFields   A comma-separated list of fields to exclude. Reference parameters of sub-objects with dot notation.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function get($appId,$fields=null,$excludeFields=null)
+    {
+        $_params = array();
+        if($fields) $_params['fields'] = $fields;
+        if($excludeFields) $_params['exclude_fields'] = $excludeFields;
+        return $this->master->call('authorized-apps/'.$appId,$_params,Mailchimp::GET);
     }
 }

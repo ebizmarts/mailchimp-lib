@@ -16,4 +16,52 @@ class Mailchimp_Automation extends Mailchimp_Abstract
      * @var Mailchimp_AutomationEmails
      */
     public $emails;
+
+    /**
+     * @param null $fields          A comma-separated list of fields to return. Reference parameters of sub-objects with dot notation.
+     * @param null $excludeFields   A comma-separated list of fields to exclude. Reference parameters of sub-objects with dot notation.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function getAll($fields=null,$excludeFields=null)
+    {
+        $_params = array();
+        if($fields) $_params['fields'] = $fields;
+        if($excludeFields) $_params['exclude_fields'] = $excludeFields;
+        return $this->master->call('automations',$_params,Mailchimp::GET);
+    }
+
+    /**
+     * @param $workflowId           The unique id for the Automation workflow.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function get($workflowId)
+    {
+        return $this->master->call('automation/'.$workflowId,null, Mailchimp::GET);
+    }
+
+    /**
+     * @param $workflowId           The unique id for the Automation workflow.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function pause($workflowId)
+    {
+        return $this->master->call('automation/'.$workflowId.'/pause-all-emails',null, Mailchimp::POST);
+    }
+
+    /**
+     * @param $workflowId           The unique id for the Automation workflow.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function start($workflowId)
+    {
+        return $this->master->call('automation/'.$workflowId.'/start-all-emails',null, Mailchimp::POST);
+    }
 }
