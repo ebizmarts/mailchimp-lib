@@ -70,7 +70,7 @@ require_once 'Mailchimp/TemplatesDefaultContent.php';
 class Mailchimp
 {
     protected $_apiKey;
-    protected $_ch;
+    protected $_ch = null;
     protected $_root    = 'https://api.mailchimp.com/3.0';
     protected $_debug   = false;
 
@@ -80,43 +80,25 @@ class Mailchimp
     const DELETE    = 'DELETE';
     const PUT       = 'PUT';
 
-    public function __construct($apiKey=null,$opts=array())
+    /**
+     * Mailchimp constructor.
+     * @param string $apiKey
+     * @param array $opts
+     * @param string $userAgent
+     */
+    public function __construct()
     {
-        if(!$apiKey)
-        {
-            throw new Mailchimp_Error('You must provide a MailChimp API key');
-        }
-        $this->_apiKey   = $apiKey;
-        $dc             = 'us1';
-        if (strstr($this->_apiKey, "-")){
-            list($key, $dc) = explode("-", $this->_apiKey, 2);
-            if (!$dc) {
-                $dc = "us1";
-            }
-        }
-        $this->_root = str_replace('https://api', 'https://' . $dc . '.api', $this->_root);
-        $this->_root = rtrim($this->_root, '/') . '/';
-
-        if (!isset($opts['timeout']) || !is_int($opts['timeout'])){
-            $opts['timeout'] = 600;
-        }
-        if (isset($opts['debug'])){
-            $this->_debug = true;
-        }
-
 
         $this->_ch = curl_init();
 
         if (isset($opts['CURLOPT_FOLLOWLOCATION']) && $opts['CURLOPT_FOLLOWLOCATION'] === true) {
             curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true);
         }
-
         curl_setopt($this->_ch, CURLOPT_USERAGENT, 'Ebizmart-MailChimp-PHP/3.0.0');
         curl_setopt($this->_ch, CURLOPT_HEADER, false);
         curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, 30);
-        curl_setopt($this->_ch, CURLOPT_TIMEOUT, $opts['timeout']);
-        curl_setopt($this->_ch, CURLOPT_USERPWD, "noname:".$this->_apiKey);
+        curl_setopt($this->_ch, CURLOPT_TIMEOUT, 600);
 
         $this->root                                         = new Mailchimp_Root($this);
         $this->authorizedApps                               = new Mailchimp_AuthorizedApps($this);
@@ -171,6 +153,30 @@ class Mailchimp
         $this->templateFolders                              = new Mailchimp_TemplateFolders($this);
         $this->templates                                    = new Mailchimp_Templates($this);
         $this->templates->defaultContent                    = new Mailchimp_TemplatesDefaultContent($this);
+    }
+    public function setApiKey($apiKey)
+    {
+        if (!$this->_ch) {
+            $this->init();
+        }
+        $this->_apiKey   = $apiKey;
+        $dc             = 'us1';
+        if (strstr($this->_apiKey, "-")){
+            list($key, $dc) = explode("-", $this->_apiKey, 2);
+            if (!$dc) {
+                $dc = "us1";
+            }
+        }
+        $this->_root = str_replace('https://api', 'https://' . $dc . '.api', $this->_root);
+        $this->_root = rtrim($this->_root, '/') . '/';
+        curl_setopt($this->_ch, CURLOPT_USERPWD, "noname:" . $this->_apiKey);
+    }
+    public function setUserAgent($userAgent)
+    {
+        if (!$this->_ch) {
+            $this->init();
+        }
+        curl_setopt($this->_ch, CURLOPT_USERAGENT, $userAgent);
     }
     public function call($url,$params,$method=Mailchimp::GET)
     {
