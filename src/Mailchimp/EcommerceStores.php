@@ -29,7 +29,7 @@ class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function add($id, $listId, $name, $platform = null, $domain = null, $emailAddress = null, $currencyCode, $moneyFormat = null,
+    public function add($id, $listId, $name, $currencyCode, $platform = null, $domain = null, $emailAddress = null, $moneyFormat = null,
                 $primaryLocale=null, $timezone = null,$phone=null,$address=null)
     {
         $_params = array('id'=>$id,'list_id'=>$listId,'name'=>$name,'currency_code'=>$currencyCode);
@@ -97,7 +97,7 @@ class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
         if($timezone) $_params['timezone'] = $timezone;
         if($phone) $_params['phone'] = $phone;
         if($address)  $_params['address'] = $address;
-        return $this->master->call('ecommerce/stores/'.$storeId,$_params,Mailchimp::PATCH);
+        return $this->master->call('ecommerce/stores/'.$storeId, $_params, Mailchimp::PATCH);
     }
 
     /**
@@ -108,6 +108,6 @@ class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
      */
     public function delete($storeId)
     {
-        return $this->master->call('ecommerce/stores/'.$storeId,Mailchimp::DELETE);
+        return $this->master->call('ecommerce/stores/'.$storeId, null, Mailchimp::DELETE);
     }
 }

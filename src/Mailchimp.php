@@ -191,8 +191,10 @@ class Mailchimp
             curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
         }
         else {
-            $_params = http_build_query($params);
-            $url .= '?'.$_params;
+            if (count($params)) {
+                $_params = http_build_query($params);
+                $url .= '?' . $_params;
+            }
         }
         curl_setopt($ch, CURLOPT_URL, $this->_root . $url);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
