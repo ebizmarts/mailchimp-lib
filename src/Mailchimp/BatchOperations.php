@@ -13,7 +13,7 @@
 class Mailchimp_BatchOperations extends Mailchimp_Abstract
 {
     /**
-     * @param $operations       An array of objects that describes operations to perform.
+     * @param $operations       String An array of objects that describes operations to perform.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
