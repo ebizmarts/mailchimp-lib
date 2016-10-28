@@ -85,7 +85,7 @@ class Mailchimp_ListsMembers extends Mailchimp_Abstract
         if($sinceLastChanged) $_params['since_last_changed'] = $sinceLastChanged;
         if($beforeLastChanged) $_params['before_last_changed'] = $beforeLastChanged;
         if($uniqueEmailId) $_params['unique_email_id'] = $uniqueEmailId;
-        return $this->master->call('list/'.$listId.'/members',$_params,Mailchimp::GET);
+        return $this->master->call('lists/'.$listId.'/members',$_params,Mailchimp::GET);
     }
 
     /**
@@ -129,7 +129,7 @@ class Mailchimp_ListsMembers extends Mailchimp_Abstract
         if($language) $_params['language'] = $language;
         if($vip) $_params['vip'] = $vip;
         if($location) $_params['location'] = $location;
-        return $this->master->call('list/'.$listId.'/members/'.$subscriberHash,$_params,Mailchimp::PATCH);
+        return $this->master->call('lists/'.$listId.'/members/'.$subscriberHash,$_params,Mailchimp::PATCH);
     }
 
     /**
@@ -160,7 +160,7 @@ class Mailchimp_ListsMembers extends Mailchimp_Abstract
         if($vip) $_params['vip'] = $vip;
         if($location) $_params['location'] = $location;
         if($statusIfNew) $_params['status_if_new'] = $statusIfNew;
-        return $this->master->call('list/'.$listId.'/members/'.$subscriberHash,$_params,Mailchimp::PUT);
+        return $this->master->call('lists/'.$listId.'/members/'.$subscriberHash,$_params,Mailchimp::PUT);
     }
 
     /**
@@ -172,6 +172,6 @@ class Mailchimp_ListsMembers extends Mailchimp_Abstract
      */
     public function delete($listId,$subscriberHash)
     {
-        return $this->master->call('list/'.$listId.'/members/'.$subscriberHash,null,Mailchimp::DELETE);
+        return $this->master->call('lists/'.$listId.'/members/'.$subscriberHash,null,Mailchimp::DELETE);
     }
 }
