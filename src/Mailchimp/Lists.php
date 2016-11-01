@@ -125,7 +125,7 @@ class Mailchimp_Lists extends Mailchimp_Abstract
         }
         else
         {
-            return $this->master->call('lists', $_params, Mailchimp::GET);
+            return $this->master->call('lists/', $_params, Mailchimp::GET);
         }
     }
 

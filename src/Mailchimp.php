@@ -211,7 +211,7 @@ class Mailchimp
         $result = json_decode($response_body, true);
 
         if(floor($info['http_code'] / 100) >= 4) {
-            throw new Mailchimp_Error($result['title'].' : '.$result['detail'].' errors: '.var_export($result['errors'],true));
+            throw new Mailchimp_Error($result['title'].' : '.$result['detail']);
         }
 
         return $result;
