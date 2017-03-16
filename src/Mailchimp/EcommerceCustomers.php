@@ -76,7 +76,24 @@ class Mailchimp_EcommerceCustomers extends Mailchimp_Abstract
         if($excludeFields) $_params['exclude_fields'] = $excludeFields;
         return $this->master->call('ecommerce/stores/'.$storeId.'/customers/'.$customerId,$_params,Mailchimp::GET);
     }
-
+    /**
+     * @param $storeId              The store id.
+     * @param $customerEmail        The email for the customer of a store.
+     * @param null $fields          A comma-separated list of fields to return. Reference parameters of sub-objects
+     *                              with dot notation.
+     * @param null $excludeFields   A comma-separated list of fields to exclude. Reference parameters of sub-objects
+     *                              with dot notation.
+     * @return mixed
+     * @throws Mailchimp_Error
+     * @throws Mailchimp_HttpError
+     */
+    public function getByEmail($storeId,$customerEmail,$fields=null,$excludeFields=null)
+    {
+        $_params = array('email_address'=>$customerEmail);
+        if($fields) $_params['fields']= $fields;
+        if($excludeFields) $_params['exclude_fields'] = $excludeFields;
+        return $this->master->call('ecommerce/stores/'.$storeId.'/customers', $_params, Mailchimp::GET);
+    }
     /**
      * @param $storeId          The store id.
      * @param $customerId       A unique identifier for the customer.
@@ -93,7 +110,7 @@ class Mailchimp_EcommerceCustomers extends Mailchimp_Abstract
      * @throws Mailchimp_HttpError
      */
     public function modify($storeId,$customerId,$optInStatus=null,$company=null,$firstName=null,$lastName=null,$ordersCount=null,
-                            $totalSpent=null,$address=null)
+                           $totalSpent=null,$address=null)
     {
         $_params = array();
         if($optInStatus) $_params['opt_in_status'] = $optInStatus;
@@ -124,7 +141,7 @@ class Mailchimp_EcommerceCustomers extends Mailchimp_Abstract
      */
     public function addOrModify($storeId,$customerId,$emailAddress,$optInStatus,$company=null,$firstName=null,$lastName=null,$ordersCount=null,$totalSpent=null,$address=null)
     {
-        $_params = array('id'=>$id,'email_address'=>$emailAddress,'opt_in_status'=>$optInStatus);
+        $_params = array('id'=>$customerId,'email_address'=>$emailAddress,'opt_in_status'=>$optInStatus);
         if($company) $_params['company'] = $company;
         if($firstName) $_params['first_name'] = $firstName;
         if($lastName) $_params['last_name'] = $lastName;
