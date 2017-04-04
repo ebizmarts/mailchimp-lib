@@ -156,6 +156,7 @@ class Mailchimp
     }
     public function setApiKey($apiKey)
     {
+        $this->_root    = 'https://api.mailchimp.com/3.0';
         if (!$this->_ch) {
             $this->init();
         }
