@@ -30,7 +30,7 @@ class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
      * @throws Mailchimp_HttpError
      */
     public function add($id, $listId, $name, $currencyCode, $platform = null, $domain = null, $emailAddress = null, $moneyFormat = null,
-                $primaryLocale=null, $timezone = null,$phone=null,$address=null)
+                        $primaryLocale=null, $timezone = null,$phone=null,$address=null)
     {
         $_params = array('id'=>$id,'list_id'=>$listId,'name'=>$name,'currency_code'=>$currencyCode);
         if($platform) $_params['platform'] = $platform;
@@ -73,6 +73,7 @@ class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
      * @param $storeId         The store id.
      * @param $platform        The e-commerce platform of the store.
      * @param $domain          The store domain.
+     * @param $name            The store name.
      * @param $emailAddress    The email address for the store.
      * @param $currencyCode    The three-letter ISO 4217 code for the currency that the store accepts.
      * @param $moneyFormat     The currency format for the store. For example: $, £, etc.
@@ -84,11 +85,12 @@ class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function edit($storeId,$platform = null, $domain = null, $emailAddress = null,$currencyCode, $moneyFormat = null,
+    public function edit($storeId,$platform = null, $domain = null, $name = null ,$emailAddress = null,$currencyCode, $moneyFormat = null,
                          $primaryLocale=null, $timezone = null,$phone=null,$address=null)
     {
         $_params=array();
         if($platform) $_params['platform'] = $platform;
+        if($name) $_params['name'] = $name;
         if($domain) $_params['domain'] = $domain;
         if($emailAddress) $_params['email_address'] = $emailAddress;
         if($currencyCode)  $_params['currency_code'] = $currencyCode;
