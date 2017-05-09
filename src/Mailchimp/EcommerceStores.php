@@ -41,7 +41,7 @@ class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
         if($timezone) $_params['timezone'] = $timezone;
         if($phone) $_params['phone'] = $phone;
         if($address)  $_params['address'] = $address;
-        if($is_sync!=null) $_params['is_syncing'] = $is_sync;
+        if($is_sync!==null) $_params['is_syncing'] = $is_sync;
         return $this->master->call('ecommerce/stores',$_params,Mailchimp::POST);
     }
 
@@ -100,7 +100,7 @@ class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
         if($timezone) $_params['timezone'] = $timezone;
         if($phone) $_params['phone'] = $phone;
         if($address)  $_params['address'] = $address;
-        if($is_sync!=null) $_params['is_syncing'] = $is_sync;
+        if($is_sync!==null) $_params['is_syncing'] = $is_sync;
         return $this->master->call('ecommerce/stores/'.$storeId, $_params, Mailchimp::PATCH);
     }
 
