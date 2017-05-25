@@ -46,7 +46,7 @@ class Mailchimp_Lists extends Mailchimp_Abstract
      */
     public $mergeFields;
     /**
-     * @var Mailchimp_ListsMergeFields
+     * @var Mailchimp_ListsWebhooks
      */
     public $webhooks;
 
