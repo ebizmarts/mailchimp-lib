@@ -80,6 +80,9 @@ class Mailchimp
     const DELETE    = 'DELETE';
     const PUT       = 'PUT';
 
+    const SUBSCRIBED = 'subscribed';
+    const UNSUBSCRIBED = 'unsubscribed';
+
     /**
      * Mailchimp constructor.
      * @param string $apiKey
