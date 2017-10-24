@@ -35,6 +35,8 @@ require_once 'Mailchimp/EcommerceOrders.php';
 require_once 'Mailchimp/EcommerceOrdersLines.php';
 require_once 'Mailchimp/EcommerceProducts.php';
 require_once 'Mailchimp/EcommerceProductsVariants.php';
+require_once 'Mailchimp/EcommercePromoRules.php';
+require_once 'Mailchimp/EcommercePromoCodes.php';
 require_once 'Mailchimp/FileManagerFiles.php';
 require_once 'Mailchimp/FileManagerFolders.php';
 require_once 'Mailchimp/Lists.php';
@@ -125,6 +127,8 @@ class Mailchimp
         $this->ecommerce->orders->lines                     = new Mailchimp_EcommerceOrdersLines($this);
         $this->ecommerce->products                          = new Mailchimp_EcommerceProducts($this);
         $this->ecommerce->products->variants                = new Mailchimp_EcommerceProductsVariants($this);
+        $this->ecommerce->promoRules                        = new Mailchimp_EcommercePromoRules($this);
+        $this->ecommerce->promoCodes                        = new Mailchimp_EcommercePromoCodes($this);
         $this->fileManagerFiles                             = new Mailchimp_FileManagerFiles($this);
         $this->fileManagerFolders                           = new Mailchimp_FileManagerFolders($this);
         $this->lists                                        = new Mailchimp_Lists($this);
