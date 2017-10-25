@@ -27,29 +27,39 @@ class Mailchimp_ListsMembers extends Mailchimp_Abstract
 
     /**
      * @param $listId               The unique id for the list.
-     * @param null $emailType       Type of email this member asked to get (‘html’ or ‘text’).
+     * @param null                                               $emailType   Type of email this member asked to get (‘html’ or ‘text’).
      * @param $status               Subscriber’s current status. (subscribed | unsubscribed | cleaned | pending)
-     * @param null $mergeFields     An individual merge var and value for a member.
-     * @param null $interest        The key of this object’s properties is the ID of the interest in question.
-     * @param null $language        If set/detected, the subscriber’s language.
-     * @param null $vip             VIP status for subscriber.
-     * @param null $location        Subscriber location information.
-     * @param null $ipOpt           The IP address the subscriber used to confirm their opt-in status.
+     * @param $emailAddress        Subscriber's email address.
+     * @param null                                               $mergeFields An individual merge var and value for a member.
+     * @param null                                               $interests   The key of this object’s properties is the ID of the interest in question.
+     * @param null                                               $language    If set/detected, the subscriber’s language.
+     * @param null                                               $vip         VIP status for subscriber.
+     * @param null                                               $location    Subscriber location information.
+     * @param null                                               $ipOpt       The IP address the subscriber used to confirm their opt-in status.
      * @return mixed
-     * @throws Mailchimp_Error
-     * @throws Mailchimp_HttpError
+     * @throws MailChimp_Error
+     * @throws MailChimp_HttpError
      */
-    public function add($listId,$emailType=null,$status, $mergeFields=null,$interests=null,$language=null,$vip=null,$location=null,$ipOpt=null)
-    {
-        $_params = array('status'=>$status);
-        if($emailType) $_params['email_type'] = $emailType;
-        if($mergeFields) $_params['merge_fields'] = $mergeFields;
-        if($interests) $_params['interests'] = $interests;
-        if($language) $_params['language'] = $language;
-        if($vip) $_params['vip'] = $vip;
-        if($location) $_params['location'] = $location;
-        if($ipOpt) $_params['ip_opt'] = $ipOpt;
-        return $this->master->call('lists/'.$listId.'/members',$_params,Mailchimp::POST);
+    public function add($listId, $status, $emailAddress, $emailType=null, $mergeFields=null, $interests=null,
+                        $language=null, $vip=null, $location=null, $ipOpt=null
+    ) {
+
+        $_params = array('status'=>$status, 'email_address' => $emailAddress);
+        if($emailType) { $_params['email_type'] = $emailType;
+        }
+        if($mergeFields) { $_params['merge_fields'] = $mergeFields;
+        }
+        if($interests) { $_params['interests'] = $interests;
+        }
+        if($language) { $_params['language'] = $language;
+        }
+        if($vip) { $_params['vip'] = $vip;
+        }
+        if($location) { $_params['location'] = $location;
+        }
+        if($ipOpt) { $_params['ip_opt'] = $ipOpt;
+        }
+        return $this->master->call('lists/'.$listId.'/members', $_params, Mailchimp::POST);
     }
 
     /**
