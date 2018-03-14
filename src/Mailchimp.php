@@ -103,7 +103,7 @@ class Mailchimp
         curl_setopt($this->_ch, CURLOPT_HEADER, false);
         curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->_ch, CURLOPT_CONNECTTIMEOUT, 30);
-        curl_setopt($this->_ch, CURLOPT_TIMEOUT, 600);
+        curl_setopt($this->_ch, CURLOPT_TIMEOUT, 60);
 
         $this->root                                         = new Mailchimp_Root($this);
         $this->authorizedApps                               = new Mailchimp_AuthorizedApps($this);
