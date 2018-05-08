@@ -149,7 +149,7 @@ class Mailchimp_Lists extends Mailchimp_Abstract
     public function edit($listId,$name,$contact,$permissionRemainder,$useArchiveBar=null,$campaignDefaults=null,$notifyOnSubscribe=null,$notifyOnUnsubscribe=null,
                          $emailTypeOption,$visibility=null)
     {
-        $_params = array('name'=>$name,'contact'=>$contact,'permission_remainder'=>$permissionRemainder,'email_type_option'=>$emailTypeOption);
+        $_params = array('name'=>$name,'contact'=>$contact,'permission_reminder'=>$permissionRemainder,'email_type_option'=>$emailTypeOption);
         if($useArchiveBar) $_params['use_archive_bar'] = $useArchiveBar;
         if($campaignDefaults) $_params['campaign_defaults'] = $campaignDefaults;
         if($notifyOnSubscribe) $_params['notify_on_subscribe'] = $notifyOnSubscribe;
