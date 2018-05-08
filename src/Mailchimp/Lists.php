@@ -75,8 +75,8 @@ class Mailchimp_Lists extends Mailchimp_Abstract
     public function add($name,$contact,$permissionRemanider,$useArchiveBar=false,$campaingDefaults,$notifyOnSubscribe=false,$notifyOnUnsubscribe,$emailTypeOption,
                         $visibility='pub')
     {
-        $_params= array('name'=>$name,'contact'=>$contact,'permission_remainder'=>$permissionRemanider,'use_archive_bar'=>$useArchiveBar,
-            'campaignDefaults'=>$campaingDefaults,'notify_on_subscribe'=>$notifyOnSubscribe,'notify_on_unsubscribe'=>$notifyOnUnsubscribe,
+        $_params= array('name'=>$name,'contact'=>$contact,'permission_reminder'=>$permissionRemanider,'use_archive_bar'=>$useArchiveBar,
+            'campaign_defaults'=>$campaingDefaults,'notify_on_subscribe'=>$notifyOnSubscribe,'notify_on_unsubscribe'=>$notifyOnUnsubscribe,
             'email_type_option'=>$emailTypeOption,'visibility'=>$visibility);
         return $this->master->call('lists',$_params,Mailchimp::POST);
     }
