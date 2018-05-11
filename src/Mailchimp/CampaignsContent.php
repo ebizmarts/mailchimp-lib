@@ -51,6 +51,6 @@ class Mailchimp_CampaignsContent extends Mailchimp_Abstract
         if($template) $_params['template'] = $template;
         if($archive) $_params['archive'] = $archive;
         if($variateContents) $_params['variate_contents'] = $variateContents;
-        return $this->master->call('campaigns/'.$campaignId.'/content',$_params,Mailchimp::PATCH);
+        return $this->master->call('campaigns/'.$campaignId.'/content',$_params,Mailchimp::PUT);
     }
 }
