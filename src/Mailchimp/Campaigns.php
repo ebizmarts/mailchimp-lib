@@ -106,7 +106,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
         $_params = array();
         if($fields) $_params['fields'] = $fields;
         if($excludeFields) $_params['exclude_fields'] = $excludeFields;
-        $this->master->call('campaigns/'.$campaignId,$_params,Mailchimp::GET);
+        return $this->master->call('campaigns/'.$campaignId,$_params,Mailchimp::GET);
     }
 
     /**
