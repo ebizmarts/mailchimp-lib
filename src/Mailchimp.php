@@ -188,18 +188,23 @@ class Mailchimp
     }
     public function call($url,$params,$method=Mailchimp::GET)
     {
-        if(count($params)&&$method!=Mailchimp::GET)
+        $hasParams = true;
+        if(is_array($params)&&count($params)==0||$params == null)
+        {
+            $hasParams = false;
+        }
+        if($hasParams&&$method!=Mailchimp::GET)
         {
             $params = json_encode($params);
         }
 
         $ch = $this->_ch;
-        if(count($params)&&$method!=Mailchimp::GET)
+        if($hasParams&&$method!=Mailchimp::GET)
         {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
         }
         else {
-            if (count($params)) {
+            if ($hasParams) {
                 $_params = http_build_query($params);
                 $url .= '?' . $_params;
             }
