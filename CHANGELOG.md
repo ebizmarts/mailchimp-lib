@@ -1,5 +1,31 @@
 # Change Log
 
+## [3.0.23](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.23) (2018-07-23)
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.22...3.0.23)
+
+**Fixed bugs:**
+
+- Php 7.2 icompatiblity with count [\#9](https://github.com/ebizmarts/mailchimp-lib/issues/9)
+
+## [3.0.22](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.22) (2018-07-11)
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.21...3.0.22)
+
+**Fixed bugs:**
+
+- Notice: Undefined index: detail in Mailchimp.php on line  222 [\#8](https://github.com/ebizmarts/mailchimp-lib/issues/8)
+
+## [3.0.21](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.21) (2018-05-14)
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.20...3.0.21)
+
+## [3.0.20](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.20) (2018-05-11)
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.19...3.0.20)
+
+## [3.0.19](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.19) (2018-05-08)
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.18...3.0.19)
+
+## [3.0.18](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.18) (2018-03-14)
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.17...3.0.18)
+
 ## [3.0.17](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.17) (2018-02-28)
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.16...3.0.17)
 
