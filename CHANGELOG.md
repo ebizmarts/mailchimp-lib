@@ -1,4 +1,4 @@
-# Change Log
+# Change Log 
 
 ## [3.0.23](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.23) (2018-07-23)
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.22...3.0.23)
