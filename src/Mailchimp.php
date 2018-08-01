@@ -224,11 +224,10 @@ class Mailchimp
         $result = json_decode($response_body, true);
 
         if(floor($info['http_code'] / 100) >= 4) {
-            if(array_key_exists('detail',$result)) {
-                throw new Mailchimp_Error($result['title'] . ' : ' . $result['detail']);
-            } else {
-                throw new Mailchimp_Error($result['title']);
-            }
+            $detail = array_key_exists('detail', $result) ? $result['detail'] : '';
+            $errors = array_key_exists('errors',$result) ? $result['errors'] : null;
+            $title = array_key_exists('title',$result) ? $result['title'] : '';
+            throw new Mailchimp_Error($this->_root . $url, $method, $params, $title, $detail, $errors);
         }
 
         return $result;
