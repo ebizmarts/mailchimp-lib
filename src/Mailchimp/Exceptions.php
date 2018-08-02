@@ -37,7 +37,7 @@ class Mailchimp_Error extends Exception
      */
     protected $params;
 
-    public function __construct($url,$method,$params,$title,$detail,$errors)
+    public function __construct($url,$method='',$params='',$title='',$detail='',$errors=null)
     {
         $titleComplete = $title . " for Api Call: " . $url;
         parent::__construct($titleComplete . " - " . $detail);
