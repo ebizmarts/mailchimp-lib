@@ -62,7 +62,17 @@ class Mailchimp_Error extends Exception
             }
             $friendlyMessage .= "\tErrors:\n".$errorMessage;
         }
-        $friendlyMessage .= "\tParams:\n\t\t".$this->params;
+        $lineParams = "\tParams:\n";
+        if(is_array($this->params)) {
+            if(count($this->params)) {
+                $lineParams .= "\t\t" . json_encode($this->params);
+            } else {
+                $lineParams = "";
+            }
+        } else {
+            $lineParams = $this->params;
+        }
+        $friendlyMessage .= $lineParams;
         return $friendlyMessage;
     }
     public function getUrl()
