@@ -1,5 +1,12 @@
 # Change Log
 
+## [3.0.27](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.27) (2018-08-08)
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.26...3.0.27)
+
+**Fixed bugs:**
+
+- In some circumstances $result is not an array [\#16](https://github.com/ebizmarts/mailchimp-lib/issues/16)
+
 ## [3.0.26](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.26) (2018-08-02)
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.25...3.0.26)
 
