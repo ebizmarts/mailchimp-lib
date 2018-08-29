@@ -219,7 +219,7 @@ class Mailchimp
 
         $info = curl_getinfo($ch);
         if(curl_error($ch)) {
-            throw new Mailchimp_HttpError("API call to $url failed: " . curl_error($ch), $method, $params);
+            throw new Mailchimp_HttpError($url, $method, $params, '', curl_error($ch));
         }
         $result = json_decode($response_body, true);
 
