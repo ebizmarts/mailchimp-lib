@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.0.28](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.28) (2018-08-29)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.27...3.0.28)
+
+**Fixed bugs:**
+
+- Critical vendor/ebizmarts/mailchimp-lib/src/Mailchimp.php:222 [\#20](https://github.com/ebizmarts/mailchimp-lib/issues/20)
+
 ## [3.0.27](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.27) (2018-08-08)
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.26...3.0.27)
 
