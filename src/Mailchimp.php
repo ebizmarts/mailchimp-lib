@@ -230,8 +230,9 @@ class Mailchimp
                 $title = array_key_exists('title', $result) ? $result['title'] : '';
                 throw new Mailchimp_Error($this->_root . $url, $method, $params, $title, $detail, $errors);
             } else {
-                throw new Mailchimp_Error($this->_root . $url, $method, $params,$result);
-            }        }
+                throw new Mailchimp_Error($this->_root . $url, $method, $params, $result);
+            }
+        }
 
         return $result;
     }
