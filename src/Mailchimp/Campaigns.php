@@ -26,11 +26,11 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
     public $sendChecklist;
 
     /**
-     * @param $type                     There are four types of campaigns you can create in MailChimp. A/B Split campaigns have been deprecated and variate campaigns should be used instead.
+     * @param string $type              There are four types of campaigns you can create in MailChimp. A/B Split campaigns have been deprecated and variate campaigns should be used instead.
      *                                  Possible Values:
      *                                  regular | plaintext| absplit | rss | variate
      * @param null $recipients          List settings for the campaign.
-     * @param $settings                 The settings for your campaign, including subject, from name, reply-to address, and more.
+     * @param array $settings           The settings for your campaign, including subject, from name, reply-to address, and more.
      * @param null $variateSettings     The settings specific to A/B test campaigns.
      * @param null $tracking            The tracking options for a campaign.
      * @param null $rssOpts             RSS options for a campaign.
@@ -95,9 +95,10 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
     }
 
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @param null $fields              A comma-separated list of fields to return. Reference parameters of sub-objects with dot notation.
      * @param null $excludeFields       A comma-separated list of fields to exclude. Reference parameters of sub-objects with dot notation.
+     * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
@@ -110,12 +111,12 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
     }
 
     /**
-     * @param $campaignId               The unique id for the campaign.
-     * @param $type                     There are four types of campaigns you can create in MailChimp. A/B Split campaigns have been deprecated and variate campaigns should be used instead.
+     * @param string $campaignId        The unique id for the campaign.
+     * @param string $type              There are four types of campaigns you can create in MailChimp. A/B Split campaigns have been deprecated and variate campaigns should be used instead.
      *                                  Possible Values:
      *                                  regular | plaintext| absplit | rss | variate
      * @param null $recipients          List settings for the campaign.
-     * @param $settings                 The settings for your campaign, including subject, from name, reply-to address, and more.
+     * @param array $settings           The settings for your campaign, including subject, from name, reply-to address, and more.
      * @param null $variateSettings     The settings specific to A/B test campaigns.
      * @param null $tracking            The tracking options for a campaign.
      * @param null $rssOpts             RSS options for a campaign.
@@ -141,7 +142,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
     }
 
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
@@ -152,7 +153,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
     }
 
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
@@ -162,7 +163,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
         return $this->master->call('campaigns/'.$campaignId.'/actions/cancel-send',null,Mailchimp::POST);
     }
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
@@ -172,7 +173,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
         return $this->master->call('campaigns/'.$campaignId.'/actions/pause',null,Mailchimp::POST);
     }
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
@@ -182,7 +183,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
         return $this->master->call('campaigns/'.$campaignId.'/actions/replicate',null,Mailchimp::POST);
     }
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
@@ -192,7 +193,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
         return $this->master->call('campaigns/'.$campaignId.'/actions/resume',null,Mailchimp::POST);
     }
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
@@ -202,7 +203,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
         return $this->master->call('campaigns/'.$campaignId.'/actions/schedule',null,Mailchimp::POST);
     }
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
@@ -212,7 +213,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
         return $this->master->call('campaigns/'.$campaignId.'/actions/send',null,Mailchimp::POST);
     }
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
@@ -222,7 +223,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
         return $this->master->call('campaigns/'.$campaignId.'/actions/test',null,Mailchimp::POST);
     }
     /**
-     * @param $campaignId               The unique id for the campaign.
+     * @param string $campaignId        The unique id for the campaign.
      * @return mixed
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
