@@ -13,7 +13,7 @@
 class Mailchimp_CampaignsContent extends Mailchimp_Abstract
 {
     /**
-     * @param $campaignId           The unique id for the campaign.
+     * @param string $campaignId    The unique id for the campaign.
      * @param null $fields
      * @param null $excludeFields
      * @return mixed
@@ -29,7 +29,7 @@ class Mailchimp_CampaignsContent extends Mailchimp_Abstract
     }
 
     /**
-     * @param $campaignId           The unique id for the campaign.
+     * @param string $campaignId    The unique id for the campaign.
      * @param null $plainText       The plain-text portion of the campaign. If left unspecified, we’ll generate this automatically.
      * @param null $html            The raw HTML for the campaign.
      * @param null $url             When importing a campaign, the URL where the HTML lives.
