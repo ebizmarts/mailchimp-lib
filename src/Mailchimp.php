@@ -179,6 +179,18 @@ class Mailchimp
         $this->_root = rtrim($this->_root, '/') . '/';
         curl_setopt($this->_ch, CURLOPT_USERPWD, "noname:" . $this->_apiKey);
     }
+
+    /**
+     * @return string
+     */
+    public function getAdminUrl()
+    {
+        $url = str_replace('.api', '.admin', $this->_root);
+        $url = rtrim(str_replace('/3.0', '', $url), '/') . '/';
+
+        return $url;
+    }
+
     public function setUserAgent($userAgent)
     {
         if (!$this->_ch) {
