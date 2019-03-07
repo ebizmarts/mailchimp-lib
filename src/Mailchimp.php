@@ -216,6 +216,7 @@ class Mailchimp
             curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
         }
         else {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, null);
             if ($hasParams) {
                 $_params = http_build_query($params);
                 $url .= '?' . $_params;
