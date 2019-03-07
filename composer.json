@@ -9,7 +9,7 @@
   "authors": [{"name": "Ebizmarts Corp.", "email": "info@ebizmarts.com", "homepage": "http://ebizmarts.com", "role": "Developer"}],
   "require": {
     "php": ">=5.2.0",
-    "ext-curl": "*",
+    "ext-curl": "*"
   },
   "autoload": {
     "psr-0": {
