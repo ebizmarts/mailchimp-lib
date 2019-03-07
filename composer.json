@@ -1,14 +1,15 @@
 {
   "name": "ebizmarts/mailchimp-lib",
   "type": "library",
-  "version": "3.0.29",
+  "version": "3.0.30",
   "description": "API client library for the MailChimp",
   "keywords": ["email", "api","mailchimp"],
   "homepage": "https://github.com/ebizmarts/mailchimp-lib",
   "license": "MIT",
   "authors": [{"name": "Ebizmarts Corp.", "email": "info@ebizmarts.com", "homepage": "http://ebizmarts.com", "role": "Developer"}],
   "require": {
-    "php": ">=5.2.0"
+    "php": ">=5.2.0",
+    "ext-curl": "*",
   },
   "autoload": {
     "psr-0": {
