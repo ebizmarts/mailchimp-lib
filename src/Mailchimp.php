@@ -226,6 +226,7 @@ class Mailchimp
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_VERBOSE, $this->_debug);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST,$method);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 
 
         $response_body = curl_exec($ch);
