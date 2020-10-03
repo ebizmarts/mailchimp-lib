@@ -10,7 +10,7 @@
  * @date: 5/2/16 4:07 PM
  * @file: ListsInterestCategoryInterests.php
  */
-class Mailchimp_ListInterestCategoryInterests extends Mailchimp_Abstract
+class Mailchimp_ListsInterestCategoryInterests extends Mailchimp_Abstract
 {
     /**
      * @param $listId               The unique id for the list.

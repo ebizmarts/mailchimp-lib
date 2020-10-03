@@ -137,7 +137,7 @@ class Mailchimp
         $this->lists->clients                               = new Mailchimp_ListsClients($this);
         $this->lists->growthHistory                         = new Mailchimp_ListsGrowthHistory($this);
         $this->lists->interestCategory                      = new Mailchimp_ListsInterestCategory($this);
-        $this->lists->interestCategory->interests           = new Mailchimp_ListInterestCategoryInterests($this);
+        $this->lists->interestCategory->interests           = new Mailchimp_ListsInterestCategoryInterests($this);
         $this->lists->members                               = new Mailchimp_ListsMembers($this);
         $this->lists->members->memberActivity               = new Mailchimp_ListsMembersActivity($this);
         $this->lists->members->memberGoal                   = new Mailchimp_ListsMembersGoals($this);

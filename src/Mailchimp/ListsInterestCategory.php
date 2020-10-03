@@ -13,7 +13,7 @@
 class Mailchimp_ListsInterestCategory extends Mailchimp_Abstract
 {
     /**
-     * @var Mailchimp_ListInterestCategoryInterests
+     * @var Mailchimp_ListsInterestCategoryInterests
      */
     public $interests;
 
