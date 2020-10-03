@@ -109,7 +109,7 @@ class Mailchimp
         $this->authorizedApps                               = new Mailchimp_AuthorizedApps($this);
         $this->automation                                   = new Mailchimp_Automation($this);
         $this->automation->emails                           = new Mailchimp_AutomationEmails($this);
-        $this->automation->emails->queue                    = new Mailchimp_AutomationEmailsQuque($this);
+        $this->automation->emails->queue                    = new Mailchimp_AutomationEmailsQueue($this);
         $this->automation->removedSubscribers               = new Mailchimp_AutomationRemovedSubscribers($this);
         $this->batchOperation                               = new Mailchimp_BatchOperations($this);
         $this->campaignFolders                              = new Mailchimp_CampaignFolders($this);
