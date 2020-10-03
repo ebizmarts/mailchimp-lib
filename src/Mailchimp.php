@@ -120,7 +120,7 @@ class Mailchimp
         $this->conversations                                = new Mailchimp_Conversations($this);
         $this->conversations->messages                      = new Mailchimp_ConversationsMessages($this);
         $this->ecommerce                                    = new Mailchimp_Ecommerce($this);
-        $this->ecommerce->stores                            = new Mailchimp_EcommerceStore($this);
+        $this->ecommerce->stores                            = new Mailchimp_EcommerceStores($this);
         $this->ecommerce->carts                             = new Mailchimp_EcommerceCarts($this);
         $this->ecommerce->customers                         = new Mailchimp_EcommerceCustomers($this);
         $this->ecommerce->orders                            = new Mailchimp_EcommerceOrders($this);
