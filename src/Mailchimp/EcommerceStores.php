@@ -10,7 +10,7 @@
  * @date: 4/29/16 4:08 PM
  * @file: EcommerceStores.php
  */
-class Mailchimp_EcommerceStore  extends Mailchimp_Abstract
+class Mailchimp_EcommerceStores extends Mailchimp_Abstract
 {
     /**
      * @param $id              The unique identifier for the store

@@ -10,7 +10,7 @@
  * @date: 5/2/16 4:13 PM
  * @file: AutomationEmailsQueue.php
  */
-class Mailchimp_AutomationEmailsQuque extends Mailchimp_Abstract
+class Mailchimp_AutomationEmailsQueue extends Mailchimp_Abstract
 {
     /**
      * @param $workflowId           The unique id for the Automation workflow.

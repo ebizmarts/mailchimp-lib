@@ -13,7 +13,7 @@
 class Mailchimp_Ecommerce extends Mailchimp_Abstract
 {
     /**
-     * @var Mailchimp_EcommerceStore
+     * @var Mailchimp_EcommerceStores
      */
     public $stores;
     /**
