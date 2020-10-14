@@ -17,7 +17,7 @@ require_once 'Mailchimp/Automation.php';
 require_once 'Mailchimp/AutomationEmails.php';
 require_once 'Mailchimp/AutomationEmailsQueue.php';
 require_once 'Mailchimp/AutomationRemovedSubscribers.php';
-require_once 'Mailchimp/Exceptions.php';
+require_once 'Mailchimp/Error.php';
 require_once 'Mailchimp/AuthorizedApps.php';
 require_once 'Mailchimp/BatchOperations.php';
 require_once 'Mailchimp/CampaignFolders.php';
