@@ -96,4 +96,3 @@ class Mailchimp_Error extends Exception
         return $this->errors;
     }
 }
-class Mailchimp_HttpError extends Mailchimp_Error {}
