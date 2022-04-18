@@ -20,7 +20,7 @@ class Mailchimp_FileManagerFiles extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function add($folderId=null,$name,$fileData)
+    public function add($folderId=null,$name=null,$fileData=null)
     {
         $_params=array('name'=>$name,'file_data'=>$fileData);
         if($folderId) $_params['folder_id'] = $folderId;
@@ -89,7 +89,7 @@ class Mailchimp_FileManagerFiles extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function modify($fileId,$folderId=null,$name,$fileData)
+    public function modify($fileId,$folderId=null,$name=null,$fileData=null)
     {
         $_params=array('name'=>$name,'file_data'=>$fileData);
         if($folderId) $_params['folder_id'] = $folderId;

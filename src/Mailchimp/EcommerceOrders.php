@@ -39,9 +39,9 @@ class Mailchimp_EcommerceOrders extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function add($storeId,$id,$customer,$campaignId =null,$financialStatus=null,$fullfillmentStatus=null,$currencyCode,
-                        $orderTotal,$taxTotal=null,$processedAtForeign=null,$cancelledAtForeign=null,$updateAtForeign=null,
-                        $shippingAddress=null,$billingAddress=null,$lines)
+    public function add($storeId,$id,$customer,$campaignId =null,$financialStatus=null,$fullfillmentStatus=null,$currencyCode=null,
+                        $orderTotal=null,$taxTotal=null,$processedAtForeign=null,$cancelledAtForeign=null,$updateAtForeign=null,
+                        $shippingAddress=null,$billingAddress=null,$lines=null)
     {
         $_params=array('id'=>$id,'customer'=>$customer,'currency_code'=>$currencyCode,'order_total'=>$orderTotal,'lines'=>$lines);
         if($campaignId) $_params['campaign_id'] = $campaignId;

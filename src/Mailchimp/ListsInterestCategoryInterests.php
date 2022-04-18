@@ -43,7 +43,7 @@ class Mailchimp_ListsInterestCategoryInterests extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function get($listId,$interestCategoryId,$interestId,$fields=null,$excludeFields)
+    public function get($listId,$interestCategoryId,$interestId,$fields=null,$excludeFields=null)
     {
         $_params = array();
         if($fields) $_params['fields'] = $fields;
@@ -63,7 +63,7 @@ class Mailchimp_ListsInterestCategoryInterests extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function modify($listId,$interestCategoryId,$interestId,$_listId=null,$name,$subscriberCount=null,$displayOrder=null)
+    public function modify($listId,$interestCategoryId,$interestId,$_listId=null,$name=null,$subscriberCount=null,$displayOrder=null)
     {
         $_params = array('name'=>$name);
         if($subscriberCount) $_params['subscriber_count'] = $subscriberCount;
