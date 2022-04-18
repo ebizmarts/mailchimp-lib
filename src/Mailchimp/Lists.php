@@ -72,7 +72,7 @@ class Mailchimp_Lists extends Mailchimp_Abstract
      * @param $emailTypeOption
      * @param string $visibility
      */
-    public function add($name,$contact,$permissionRemanider,$useArchiveBar=false,$campaingDefaults,$notifyOnSubscribe=false,$notifyOnUnsubscribe,$emailTypeOption,
+    public function add($name,$contact,$permissionRemanider,$useArchiveBar=false,$campaingDefaults=null,$notifyOnSubscribe=false,$notifyOnUnsubscribe=null,$emailTypeOption=null,
                         $visibility='pub')
     {
         $_params= array('name'=>$name,'contact'=>$contact,'permission_reminder'=>$permissionRemanider,'use_archive_bar'=>$useArchiveBar,
@@ -147,7 +147,7 @@ class Mailchimp_Lists extends Mailchimp_Abstract
      * @throws Mailchimp_HttpError
      */
     public function edit($listId,$name,$contact,$permissionRemainder,$useArchiveBar=null,$campaignDefaults=null,$notifyOnSubscribe=null,$notifyOnUnsubscribe=null,
-                         $emailTypeOption,$visibility=null)
+                         $emailTypeOption=null,$visibility=null)
     {
         $_params = array('name'=>$name,'contact'=>$contact,'permission_reminder'=>$permissionRemainder,'email_type_option'=>$emailTypeOption);
         if($useArchiveBar) $_params['use_archive_bar'] = $useArchiveBar;

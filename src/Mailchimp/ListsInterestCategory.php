@@ -27,7 +27,7 @@ class Mailchimp_ListsInterestCategory extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function add($listId,$title,$displayOrder=null,$type)
+    public function add($listId,$title,$displayOrder=null,$type=null)
     {
         $_params = array('title'=>$title,'type'=>$type);
         if($displayOrder) $_params['display_order'] = $displayOrder;
@@ -84,7 +84,7 @@ class Mailchimp_ListsInterestCategory extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function modify($listId,$interestCategoryId,$title,$displayOrder=null,$type)
+    public function modify($listId,$interestCategoryId,$title,$displayOrder=null,$type=null)
     {
         $_params = array('title'=>$title,'type'=>$type);
         if($displayOrder) $_params['display_order'] = $displayOrder;
