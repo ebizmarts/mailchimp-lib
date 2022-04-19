@@ -22,7 +22,7 @@ class Mailchimp_ConversationsMessages extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function add($conversationId,$fromEmail,$subject=null,$message=null,$read)
+    public function add($conversationId,$fromEmail,$subject=null,$message=null,$read=null)
     {
         $_params = array('from_email'=>$fromEmail,'read'=>$read);
         if($subject) $_params['subjects'] = $subject;

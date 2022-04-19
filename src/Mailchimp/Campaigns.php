@@ -41,7 +41,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function add($type,$recipients=null,$settings,$variateSettings=null,$tracking=null,$rssOpts=null,$socialCard=null,
+    public function add($type,$recipients=null,$settings=null,$variateSettings=null,$tracking=null,$rssOpts=null,$socialCard=null,
                             $reportSummary=null,$deliveryStatus=null)
     {
         $_params = array('type'=>$type,'settings'=>$settings);
@@ -116,7 +116,7 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
      *                                  Possible Values:
      *                                  regular | plaintext| absplit | rss | variate
      * @param null $recipients          List settings for the campaign.
-     * @param array $settings           The settings for your campaign, including subject, from name, reply-to address, and more.
+     * @param array|null $settings           The settings for your campaign, including subject, from name, reply-to address, and more.
      * @param null $variateSettings     The settings specific to A/B test campaigns.
      * @param null $tracking            The tracking options for a campaign.
      * @param null $rssOpts             RSS options for a campaign.
@@ -127,8 +127,8 @@ class Mailchimp_Campaigns extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function modify($campaignId,$type,$recipients=null,$settings,$variateSettings=null,$tracking=null,$rssOpts=null,$socialCard=null,
-                           $reportSummary=null,$deliveryStatus=null)
+    public function modify($campaignId, $type, $recipients=null,$settings=null, $variateSettings=null, $tracking=null, $rssOpts=null, $socialCard=null,
+                           $reportSummary=null, $deliveryStatus=null)
     {
         $_params = array('type'=>$type,'settings'=>$settings);
         if($recipients) $_params['recipients'] = $recipients;
