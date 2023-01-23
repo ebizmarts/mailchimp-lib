@@ -75,6 +75,20 @@ class Mailchimp
     protected $_ch = null;
     protected $_root    = 'https://api.mailchimp.com/3.0';
     protected $_debug   = false;
+    public $root;
+    public $authorizedApps;
+    public $automation;
+    public $batchOperation;
+    public $campaignFolders;
+    public $campaigns;
+    public $conversations;
+    public $ecommerce;
+    public $fileManagerFiles;
+    public $fileManagerFolders;
+    public $lists;
+    public $reports;
+    public $templateFolders;
+    public $templates;
 
     const POST      = 'POST';
     const GET       = 'GET';
