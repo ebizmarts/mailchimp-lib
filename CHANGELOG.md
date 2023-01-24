@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.0.36](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.36) (2022-04-18)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.35...3.0.36)
+
+**Fixed bugs:**
+
+- Add php 8.2 compatibility [\#44](https://github.com/ebizmarts/mailchimp-lib/issues/44)
+
 ## [3.0.35](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.35) (2022-04-18)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.34...3.0.35)
