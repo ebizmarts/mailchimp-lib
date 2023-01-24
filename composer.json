@@ -1,7 +1,7 @@
 {
   "name": "ebizmarts/mailchimp-lib",
   "type": "library",
-  "version": "3.0.35",
+  "version": "3.0.36",
   "description": "API client library for the MailChimp",
   "keywords": ["email", "api","mailchimp"],
   "homepage": "https://github.com/ebizmarts/mailchimp-lib",
