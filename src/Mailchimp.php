@@ -212,6 +212,10 @@ class Mailchimp
         }
         curl_setopt($this->_ch, CURLOPT_USERAGENT, $userAgent);
     }
+    public function setTimeOut($timeout)
+    {
+        curl_setopt($this->_ch, CURLOPT_TIMEOUT, $timeout);
+    }
     public function call($url,$params,$method=Mailchimp::GET)
     {
         $hasParams = true;
