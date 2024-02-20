@@ -21,11 +21,12 @@ class Mailchimp_ListsMembersActivity extends Mailchimp_Abstract
      * @throws Mailchimp_Error
      * @throws Mailchimp_HttpError
      */
-    public function get($listId,$subscriberHash,$fields,$excludeFields)
+    public function get($listId,$subscriberHash,$fields,$excludeFields, $action)
     {
         $_params = array();
         if($fields) $_params['fields'] = $fields;
         if($excludeFields) $_params['exclude_fields'] = $excludeFields;
+        if($action) $_params['action'] = $action;
         return $this->master->call('lists/'.$listId.'/members/'.$subscriberHash.'/activity',$_params,Mailchimp::GET);
     }
 }
