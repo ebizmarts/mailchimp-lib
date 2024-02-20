@@ -1,8 +1,16 @@
 # Change Log
 
+## [3.0.38](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.38) (2024-02-20)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.37...3.0.38)
+
+**Implemented enhancements:**
+
+- Add the possibility to add actions to ListMemberActivity [\#50](https://github.com/ebizmarts/mailchimp-lib/issues/50)
+
 ## [3.0.37](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.37) (2023-04-17)
 
-[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.35...3.0.36)
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.36...3.0.37)
 
 **Implemented enhancements:**
 
