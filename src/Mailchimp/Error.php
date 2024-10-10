@@ -35,9 +35,13 @@ class Mailchimp_Error extends Exception
     /**
      * @var string
      */
+    protected $instance;
+    /**
+     * @var string
+     */
     protected $params;
 
-    public function __construct($url,$method='',$params='',$title='',$detail='',$errors=null)
+    public function __construct($url,$method='',$params='',$title='',$detail='',$errors=null, $instance = null)
     {
         $titleComplete = $title . " for Api Call: " . $url;
         parent::__construct($titleComplete . " - " . $detail);
@@ -47,6 +51,7 @@ class Mailchimp_Error extends Exception
         $this->method = $method;
         $this->errors = $errors;
         $this->params = $params;
+        $this->instance = $instance;
     }
     public function getFriendlyMessage()
     {
@@ -73,6 +78,9 @@ class Mailchimp_Error extends Exception
             $lineParams = $this->params;
         }
         $friendlyMessage .= $lineParams;
+        if ($this->instance) {
+            $friendlyMessage .= "\n\tInstance: [".$this->instance."]\n";
+        }
         return $friendlyMessage;
     }
     public function getUrl()

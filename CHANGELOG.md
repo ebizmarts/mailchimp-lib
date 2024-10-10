@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.0.39](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.39) (2024-10-10)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.38...3.0.39)
+
+**Implemented enhancements:**
+
+- Add the instance value to the log [\#53](https://github.com/ebizmarts/mailchimp-lib/issues/53)
+
 ## [3.0.38](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.38) (2024-02-20)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.37...3.0.38)
