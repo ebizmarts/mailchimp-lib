@@ -251,7 +251,7 @@ class Mailchimp
 
         $info = curl_getinfo($ch);
         if(curl_error($ch)) {
-            throw new Mailchimp_HttpError($url, $method, $params, '', curl_error($ch));
+            throw new Mailchimp_HttpError($this->_root . $url, $method, $params, '', curl_error($ch));
         }
         $result = json_decode($response_body, true);
 
