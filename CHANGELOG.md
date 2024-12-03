@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.0.41](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.41) (2024-12-03)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.40...3.0.41)
+
+**Implemented enhancements:**
+
+- Structure response of getFriendlyMessage [\#54](https://github.com/ebizmarts/mailchimp-lib/issues/56)
+
 ## [3.0.40](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.40) (2024-11-20)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.39...3.0.40)

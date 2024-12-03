@@ -55,33 +55,29 @@ class Mailchimp_Error extends Exception
     }
     public function getFriendlyMessage()
     {
-        $friendlyMessage = $this->title . " for Api Call: [" . $this->url. "] using method [".$this->method."]\n";
-        $friendlyMessage .= "\tDetail: [".$this->detail."]\n";
+        $error = [];
+        $error['title'] = $this->title . " for Api Call: [" . $this->url. "] using method [".$this->method."]";
+        $error['detail'] = $this->detail;
         if(is_array($this->errors)) {
-            $errorMessage = '';
             foreach ($this->errors as $error) {
                 $field = array_key_exists('field', $error) ? $error['field'] : '';
                 $message = array_key_exists('message', $error) ? $error['message'] : '';
-                $line = "\t\t field [$field] : $message\n";
-                $errorMessage .= $line;
+                $error['field'][$field] = $message;
             }
-            $friendlyMessage .= "\tErrors:\n".$errorMessage;
         }
-        $lineParams = "\tParams:\n";
         if(is_array($this->params)) {
             if(count($this->params)) {
-                $lineParams .= "\t\t" . json_encode($this->params);
-            } else {
-                $lineParams = "";
+                $error['params'][]=$this->params;
             }
         } else {
-            $lineParams = $this->params;
+            $error['params'][] = $this->params;
         }
-        $friendlyMessage .= $lineParams;
         if ($this->instance) {
-            $friendlyMessage .= "\n\tInstance: [".$this->instance."]\n";
+            $error['instance'] = $this->instance;
         }
-        return $friendlyMessage;
+        $errors = [];
+        $errors['error'] = $error;
+        return $errors;
     }
     public function getUrl()
     {
