@@ -75,6 +75,8 @@ class Mailchimp
     protected $_ch = null;
     protected $_root    = 'https://api.mailchimp.com/3.0';
     protected $_debug   = false;
+    protected $helper = null;
+
     public $root;
     public $authorizedApps;
     public $automation;
@@ -204,6 +206,10 @@ class Mailchimp
 
         return $url;
     }
+    public function setHelper($helper)
+    {
+        $this->helper = $helper;
+    }
 
     public function setUserAgent($userAgent)
     {
@@ -251,7 +257,7 @@ class Mailchimp
 
         $info = curl_getinfo($ch);
         if(curl_error($ch)) {
-            throw new Mailchimp_HttpError($this->_root . $url, $method, $params, '', curl_error($ch));
+            throw new Mailchimp_HttpError($this->_root . $url, $method, $params, '', curl_error($ch),null,null, $this->helper);
         }
         $result = json_decode($response_body, true);
 
@@ -261,10 +267,25 @@ class Mailchimp
                 $errors = array_key_exists('errors', $result) ? $result['errors'] : null;
                 $title = array_key_exists('title', $result) ? $result['title'] : '';
                 $instance = array_key_exists('title', $result) ? $result['instance'] : null;
-                throw new Mailchimp_Error($this->_root . $url, $method, $params, $title, $detail, $errors, $instance);
+                throw new Mailchimp_Error($this->_root . $url, $method, $params, $title, $detail, $errors, $instance, $this->helper);
             } else {
-                throw new Mailchimp_Error($this->_root . $url, $method, $params, $result);
+                throw new Mailchimp_Error($this->_root . $url, $method, $params, $result, null, null, null, $this->helper);
             }
+        }
+        if ($this->helper) {
+            $curlinfo = [];
+            if (array_key_exists('total_time', $info)) {
+                $total_time = $info['total_time'];
+            } else {
+                $total_time = 0;
+            }
+            $curlinfo['info']['total_time'] = $total_time;
+            $curlinfo['info']['time'] = $this->helper->getGmtDate();
+            $curlinfo['info']['url'] = $this->_root . $url;
+            $curlinfo['info']['method'] = $method;
+            $curlinfo['info']['params'] = $params;
+            $curlinfo['info']['response'] = $result;
+            $this->helper->saveNotification($curlinfo);
         }
 
         return $result;
