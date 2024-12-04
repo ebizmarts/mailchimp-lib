@@ -1,12 +1,20 @@
 # Change Log
 
+## [3.0.42](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.42) (2024-12-04)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.41...3.0.42)
+
+**Implemented enhancements:**
+
+- Add SaveNotification enhancement [\#58](https://github.com/ebizmarts/mailchimp-lib/issues/58)
+
 ## [3.0.41](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.41) (2024-12-03)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.40...3.0.41)
 
 **Implemented enhancements:**
 
-- Structure response of getFriendlyMessage [\#54](https://github.com/ebizmarts/mailchimp-lib/issues/56)
+- Structure response of getFriendlyMessage [\#56](https://github.com/ebizmarts/mailchimp-lib/issues/56)
 
 ## [3.0.40](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.40) (2024-11-20)
 
