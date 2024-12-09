@@ -64,9 +64,9 @@ class Mailchimp_Error extends Exception
         $error['title'] = $this->title . " for Api Call: [" . $this->url. "] using method [".$this->method."]";
         $error['detail'] = $this->detail;
         if(is_array($this->errors)) {
-            foreach ($this->errors as $error) {
-                $field = array_key_exists('field', $error) ? $error['field'] : '';
-                $message = array_key_exists('message', $error) ? $error['message'] : '';
+            foreach ($this->errors as $errors) {
+                $field = array_key_exists('field', $errors) ? $errors['field'] : '';
+                $message = array_key_exists('message', $errors) ? $errors['message'] : '';
                 $error['field'][$field] = $message;
             }
         }
