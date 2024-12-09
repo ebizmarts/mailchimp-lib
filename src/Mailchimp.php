@@ -76,6 +76,8 @@ class Mailchimp
     protected $_root    = 'https://api.mailchimp.com/3.0';
     protected $_debug   = false;
     protected $helper = null;
+    protected $storeURL = null;
+
 
     public $root;
     public $authorizedApps;
@@ -210,6 +212,10 @@ class Mailchimp
     {
         $this->helper = $helper;
     }
+    public function setStoreURL($storeURL)
+    {
+        $this->storeURL = $storeURL;
+    }
 
     public function setUserAgent($userAgent)
     {
@@ -257,7 +263,7 @@ class Mailchimp
 
         $info = curl_getinfo($ch);
         if(curl_error($ch)) {
-            throw new Mailchimp_HttpError($this->_root . $url, $method, $params, '', curl_error($ch),null,null, $this->helper);
+            throw new Mailchimp_HttpError($this->_root . $url, $method, $params, '', curl_error($ch),null,null, $this->helper,  $this->storeURL);
         }
         $result = json_decode($response_body, true);
 
@@ -267,9 +273,9 @@ class Mailchimp
                 $errors = array_key_exists('errors', $result) ? $result['errors'] : null;
                 $title = array_key_exists('title', $result) ? $result['title'] : '';
                 $instance = array_key_exists('title', $result) ? $result['instance'] : null;
-                throw new Mailchimp_Error($this->_root . $url, $method, $params, $title, $detail, $errors, $instance, $this->helper);
+                throw new Mailchimp_Error($this->_root . $url, $method, $params, $title, $detail, $errors, $instance, $this->helper,  $this->storeURL);
             } else {
-                throw new Mailchimp_Error($this->_root . $url, $method, $params, $result, null, null, null, $this->helper);
+                throw new Mailchimp_Error($this->_root . $url, $method, $params, $result, null, null, null, $this->helper,  $this->storeURL);
             }
         }
         if ($this->helper) {
@@ -278,6 +284,9 @@ class Mailchimp
                 $total_time = $info['total_time'];
             } else {
                 $total_time = 0;
+            }
+            if ($this->storeURL) {
+                $curlinfo['storeURL'] = $this->storeURL;
             }
             $curlinfo['info']['total_time'] = $total_time;
             $curlinfo['info']['time'] = $this->helper->getGmtDate();
