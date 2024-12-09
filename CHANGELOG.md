@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.0.43](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.43) (2024-12-09)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.42...3.0.43)
+
+**Implemented enhancements:**
+
+- Add timestamp and url [\#60](https://github.com/ebizmarts/mailchimp-lib/issues/60)
+
 ## [3.0.42](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.42) (2024-12-04)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.41...3.0.42)
