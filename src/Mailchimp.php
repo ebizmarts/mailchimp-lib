@@ -288,8 +288,8 @@ class Mailchimp
             if ($this->storeURL) {
                 $curlinfo['storeURL'] = $this->storeURL;
             }
+            $curlinfo['time'] = $this->helper->getGmtDate();;
             $curlinfo['info']['total_time'] = $total_time;
-            $curlinfo['info']['time'] = $this->helper->getGmtDate();
             $curlinfo['info']['url'] = $this->_root . $url;
             $curlinfo['info']['method'] = $method;
             $curlinfo['info']['params'] = $params;
