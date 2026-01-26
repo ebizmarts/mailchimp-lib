@@ -50,6 +50,7 @@ require_once 'Mailchimp/ListsMembers.php';
 require_once 'Mailchimp/ListsMembersActivity.php';
 require_once 'Mailchimp/ListsMembersGoals.php';
 require_once 'Mailchimp/ListsMembersNotes.php';
+require_once 'Mailchimp/ListsMembersEvent.php';
 require_once 'Mailchimp/ListsMergeFields.php';
 require_once 'Mailchimp/ListsSegments.php';
 require_once 'Mailchimp/ListsSegmentsMembers.php';
@@ -159,7 +160,8 @@ class Mailchimp
         $this->lists->members                               = new Mailchimp_ListsMembers($this);
         $this->lists->members->memberActivity               = new Mailchimp_ListsMembersActivity($this);
         $this->lists->members->memberGoal                   = new Mailchimp_ListsMembersGoals($this);
-        $this->lists->members->memberNotes                  = new Mailchimp_ListsMembersNotes($this);;
+        $this->lists->members->memberNotes                  = new Mailchimp_ListsMembersNotes($this);
+        $this->lists->members->memberEvent                  = new Mailchimp_ListsMemberEvent($this);
         $this->lists->mergeFields                           = new Mailchimp_ListsMergeFields($this);
         $this->lists->segments                              = new Mailchimp_ListsSegments($this);
         $this->lists->segments->segmentMembers              = new Mailchimp_ListsSegmentsMembers($this);

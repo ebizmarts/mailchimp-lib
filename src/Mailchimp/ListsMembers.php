@@ -24,6 +24,10 @@ class Mailchimp_ListsMembers extends Mailchimp_Abstract
      * @var Mailchimp_ListsMembersNotes
      */
     public $memberNotes;
+    /**
+     * @var Mailchimp_ListsMemberEvent
+     */
+    public $memberEvent;
 
     /**
      * @param $listId               The unique id for the list.
