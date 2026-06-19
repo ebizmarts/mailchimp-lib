@@ -274,7 +274,7 @@ class Mailchimp
                 $detail = array_key_exists('detail', $result) ? $result['detail'] : '';
                 $errors = array_key_exists('errors', $result) ? $result['errors'] : null;
                 $title = array_key_exists('title', $result) ? $result['title'] : '';
-                $instance = array_key_exists('title', $result) ? $result['instance'] : null;
+                $instance = array_key_exists('instance', $result) ? $result['instance'] : null;
                 throw new Mailchimp_Error($this->_root . $url, $method, $params, $title, $detail, $errors, $instance, $this->helper,  $this->storeURL);
             } else {
                 throw new Mailchimp_Error($this->_root . $url, $method, $params, $result, null, null, null, $this->helper,  $this->storeURL);
