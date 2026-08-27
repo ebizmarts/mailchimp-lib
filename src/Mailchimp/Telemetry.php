@@ -62,11 +62,19 @@ class Mailchimp_Telemetry
      * The extension's sync cron asks for the account root every five minutes,
      * so ~288 processes a day are eligible. Reporting from all of them would
      * cost about three hundred reports per installation per day to say very
-     * nearly the same thing three hundred times. The divisor turns that into
-     * roughly four.
+     * nearly the same thing three hundred times. The divisors turn that into
+     * roughly four each, so about eight a day from an installation that runs
+     * both kinds of process.
+     *
+     * The two are coprime on purpose. They share one hash seed, so a common
+     * factor would make one set of windows a subset of the other: every report
+     * an installation sent would land in the same few windows, and the
+     * identified one would never arrive on a window the other had not already
+     * used. Coprime divisors leave the two lanes independent, overlapping on
+     * about 1.5% of windows instead of all of them.
      */
     const SAMPLE_ROOT  = 72;
-    const SAMPLE_OTHER = 8;
+    const SAMPLE_OTHER = 71;
 
     /** The window the sampling hash is stable within. */
     const SAMPLE_WINDOW_SEC = 300;
@@ -424,9 +432,9 @@ class Mailchimp_Telemetry
      * the whole population from reporting at the same moment.
      *
      * A background process that never asked for the account root has no
-     * identity to attach, so it reports rarely and briefly: enough to show the
-     * installation is working, not enough to pay for detail nobody can join to
-     * anything.
+     * identity to attach, so it reports just as seldom but says less: enough
+     * to show the installation is working, not enough to pay for detail nobody
+     * can join to anything.
      *
      * @param  array $bucket
      * @param  bool  $cli
