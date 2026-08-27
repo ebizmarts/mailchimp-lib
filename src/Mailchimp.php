@@ -13,6 +13,7 @@
 
 require_once 'Mailchimp/Abstract.php';
 require_once 'Mailchimp/Root.php';
+require_once 'Mailchimp/Telemetry.php';
 require_once 'Mailchimp/Automation.php';
 require_once 'Mailchimp/AutomationEmails.php';
 require_once 'Mailchimp/AutomationEmailsQueue.php';
@@ -79,6 +80,11 @@ class Mailchimp
     protected $helper = null;
     protected $storeURL = null;
 
+    /**
+     * @var Mailchimp_Telemetry
+     */
+    protected $_telemetry = null;
+
 
     public $root;
     public $authorizedApps;
@@ -104,6 +110,7 @@ class Mailchimp
     const SUBSCRIBED = 'subscribed';
     const UNSUBSCRIBED = 'unsubscribed';
 
+
     /**
      * Mailchimp constructor.
      * @param string $apiKey
@@ -118,6 +125,8 @@ class Mailchimp
         if (isset($opts['CURLOPT_FOLLOWLOCATION']) && $opts['CURLOPT_FOLLOWLOCATION'] === true) {
             curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true);
         }
+        $this->_telemetry = new Mailchimp_Telemetry();
+        $this->_telemetry->setUserAgent('Ebizmart-MailChimp-PHP/3.0.0');
         curl_setopt($this->_ch, CURLOPT_USERAGENT, 'Ebizmart-MailChimp-PHP/3.0.0');
         curl_setopt($this->_ch, CURLOPT_HEADER, false);
         curl_setopt($this->_ch, CURLOPT_RETURNTRANSFER, true);
@@ -198,6 +207,7 @@ class Mailchimp
         $this->_root = str_replace('https://api', 'https://' . $dc . '.api', $this->_root);
         $this->_root = rtrim($this->_root, '/') . '/';
         curl_setopt($this->_ch, CURLOPT_USERPWD, "noname:" . $this->_apiKey);
+        $this->_telemetry->switchKey($this->_apiKey, $dc);
     }
 
     /**
@@ -213,10 +223,12 @@ class Mailchimp
     public function setHelper($helper)
     {
         $this->helper = $helper;
+        $this->_telemetry->setHelper($helper);
     }
     public function setStoreURL($storeURL)
     {
         $this->storeURL = $storeURL;
+        $this->_telemetry->setStoreUrl($storeURL);
     }
 
     public function setUserAgent($userAgent)
@@ -225,6 +237,7 @@ class Mailchimp
             $this->init();
         }
         curl_setopt($this->_ch, CURLOPT_USERAGENT, $userAgent);
+        $this->_telemetry->setUserAgent($userAgent);
     }
     public function setTimeOut($timeout)
     {
@@ -232,6 +245,10 @@ class Mailchimp
     }
     public function call($url,$params,$method=Mailchimp::GET)
     {
+        // Captured here, before the query string is appended below, so what is
+        // recorded is the resource addressed and never the arguments.
+        $telemetryPath = $url;
+
         $hasParams = true;
         if(is_array($params)&&count($params)==0||$params == null)
         {
@@ -264,6 +281,10 @@ class Mailchimp
         $response_body = curl_exec($ch);
 
         $info = curl_getinfo($ch);
+        // Recorded before the failure paths below raise: a tally that only
+        // counts what succeeded describes the opposite of what it is for.
+        $this->_telemetry->record($telemetryPath, $info, curl_errno($ch));
+
         if(curl_error($ch)) {
             throw new Mailchimp_HttpError($this->_root . $url, $method, $params, '', curl_error($ch),null,null, $this->helper,  $this->storeURL);
         }
@@ -280,6 +301,10 @@ class Mailchimp
                 throw new Mailchimp_Error($this->_root . $url, $method, $params, $result, null, null, null, $this->helper,  $this->storeURL);
             }
         }
+        if (Mailchimp_Telemetry::family($telemetryPath) === 'root') {
+            $this->_telemetry->observeRoot($result);
+        }
+
         if ($this->helper) {
             $curlinfo = [];
             if (array_key_exists('total_time', $info)) {
@@ -300,5 +325,22 @@ class Mailchimp
         }
 
         return $result;
+    }
+
+    /**
+     * Report on the way out.
+     *
+     * Wrapped because a destructor that raises during shutdown produces an
+     * error the merchant sees, about a feature that is only meant to observe.
+     */
+    public function __destruct()
+    {
+        try {
+            if ($this->_telemetry) {
+                $this->_telemetry->flush();
+            }
+        } catch (Exception $e) {
+            // Diagnostics must never be the reason a request fails.
+        }
     }
 }
