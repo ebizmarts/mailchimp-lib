@@ -55,6 +55,22 @@ class Mailchimp_Telemetry
     /** Reports sent per process, whatever the bucket count. */
     const MAX_SENDS = 4;
 
+    /**
+     * How often a process that saw the account root reports, and how often one
+     * that did not.
+     *
+     * The extension's sync cron asks for the account root every five minutes,
+     * so ~288 processes a day are eligible. Reporting from all of them would
+     * cost about three hundred reports per installation per day to say very
+     * nearly the same thing three hundred times. The divisor turns that into
+     * roughly four.
+     */
+    const SAMPLE_ROOT  = 72;
+    const SAMPLE_OTHER = 8;
+
+    /** The window the sampling hash is stable within. */
+    const SAMPLE_WINDOW_SEC = 300;
+
     /** Milliseconds the whole reporting step may spend, by context. */
     const BUDGET_WEB_MS = 400;
     const BUDGET_CLI_MS = 1500;
@@ -194,6 +210,7 @@ class Mailchimp_Telemetry
             'families'          => array(),
             'mc_store_id'       => null,
             'list_id'           => null,
+            'saw_root'          => false,
             'account_id'        => null,
             'owner_name'        => null,
             'owner_email'       => null,
@@ -294,6 +311,7 @@ class Mailchimp_Telemetry
         }
 
         $bucket = &$this->_buckets[$this->_current];
+        $bucket['saw_root'] = true;
 
         // First non-empty wins: identity must not move under a report that has
         // already been attributed.
@@ -339,7 +357,12 @@ class Mailchimp_Telemetry
                 continue;
             }
 
-            $body = json_encode($this->envelope($bucket, $cli));
+            $mode = $this->sendMode($bucket, $cli);
+            if ($mode === 'skip') {
+                continue;
+            }
+
+            $body = json_encode($this->envelope($bucket, $cli, $mode === 'lean'));
             if (!is_string($body) || strlen($body) > self::MAX_BYTES) {
                 continue;
             }
@@ -350,11 +373,50 @@ class Mailchimp_Telemetry
     }
 
     /**
+     * Whether this bucket reports on this run, and how much.
+     *
+     * A web request reports every time: there are few of them, they are the
+     * ones a merchant is waiting on, and their timing is the signal.
+     *
+     * Background processes are the opposite — hundreds a day, all saying much
+     * the same thing — so they report on a schedule derived from the store
+     * itself. The same store lands in the same window, which keeps a busy
+     * installation from reporting far more often than a quiet one, and keeps
+     * the whole population from reporting at the same moment.
+     *
+     * A background process that never asked for the account root has no
+     * identity to attach, so it reports rarely and briefly: enough to show the
+     * installation is working, not enough to pay for detail nobody can join to
+     * anything.
+     *
      * @param  array $bucket
      * @param  bool  $cli
+     * @return string full, lean or skip
+     */
+    private function sendMode($bucket, $cli)
+    {
+        if (!$cli) {
+            return 'full';
+        }
+
+        $seed    = $bucket['store_url'] ? $bucket['store_url'] : $bucket['install_id'];
+        $divisor = $bucket['saw_root'] ? self::SAMPLE_ROOT : self::SAMPLE_OTHER;
+        $window  = floor(time() / self::SAMPLE_WINDOW_SEC);
+
+        if ((crc32($seed . $window) & 0x7fffffff) % $divisor !== 0) {
+            return 'skip';
+        }
+
+        return $bucket['saw_root'] ? 'full' : 'lean';
+    }
+
+    /**
+     * @param  array $bucket
+     * @param  bool  $cli
+     * @param  bool  $lean  omit everything that is not always present
      * @return array
      */
-    private function envelope($bucket, $cli)
+    private function envelope($bucket, $cli, $lean = false)
     {
         $out = array(
             'v'          => self::SCHEMA,
@@ -375,6 +437,13 @@ class Mailchimp_Telemetry
 
         if ($this->_dropped > 0) {
             $out['bdrop'] = $this->_dropped;
+        }
+
+        // A lean report says the installation is alive and how much work it
+        // did. Everything below identifies or explains, and none of it can be
+        // joined to anything without an account, which this one never saw.
+        if ($lean) {
+            return $out;
         }
         if ($bucket['store_url']) {
             $out['store_url'] = $bucket['store_url'];
