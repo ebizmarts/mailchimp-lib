@@ -117,6 +117,16 @@ class Mailchimp_Telemetry
     private $_storeUrl = null;
 
     /**
+     * @var bool|null latched when the helper is set
+     */
+    private $_contactAllowed = null;
+
+    /**
+     * @var string|null latched when the helper is set
+     */
+    private $_moduleVersion = null;
+
+    /**
      * @var string|null
      */
     private $_userAgent = null;
@@ -137,6 +147,20 @@ class Mailchimp_Telemetry
     public function setHelper($helper)
     {
         $this->_helper = $helper;
+
+        // Read now rather than at shutdown. A read that throws during shutdown
+        // is indistinguishable from no preference at all, and the fallback is
+        // to allow — so a merchant who declined could have the contact pair
+        // sent anyway. Asking while the host is healthy removes that. It also
+        // moves an uncached module lookup out of the destructor.
+        // Once only: the helper is handed over on every API construction, and
+        // both answers are process-wide.
+        if ($this->_contactAllowed === null) {
+            $this->_contactAllowed = $this->readContactAllowed();
+        }
+        if ($this->_moduleVersion === null) {
+            $this->_moduleVersion = $this->readModuleVersion();
+        }
     }
 
     /**
@@ -178,7 +202,13 @@ class Mailchimp_Telemetry
      */
     public function switchKey($apiKey, $dc)
     {
-        if (!$this->_enabled || !$apiKey) {
+        if (!$this->_enabled) {
+            return;
+        }
+        if (!$apiKey) {
+            // Same discipline as the cap path below: with no account to attribute
+            // to, later calls must not land in whichever bucket was last open.
+            $this->_current = null;
             return;
         }
 
@@ -197,8 +227,8 @@ class Mailchimp_Telemetry
 
         $this->_buckets[$id] = array(
             'install_id'        => $id,
-            'dc'                => $dc,
-            'store_url'         => $this->_storeUrl,
+            'dc'                => self::validDc($dc),
+            'store_url'         => null,
             'calls'             => 0,
             'errors'            => 0,
             'time_ms'           => 0,
@@ -241,6 +271,16 @@ class Mailchimp_Telemetry
 
         $bucket = &$this->_buckets[$this->_current];
         $family = self::family($path);
+
+        // Recorded on the attempt, not on the answer. Asking for the account
+        // is what says this process is the kind that can be identified; whether
+        // the answer came back is a separate fact, and one that fails exactly
+        // for the installations most worth hearing from. Latching on success
+        // would drop a store whose key has expired into the anonymous, less
+        // detailed branch, and make it report far more often than a healthy one.
+        if ($family === 'root') {
+            $bucket['saw_root'] = true;
+        }
 
         // The store and audience a request addressed are part of the path, so
         // they cost nothing to observe. First non-empty wins: an installation
@@ -311,7 +351,6 @@ class Mailchimp_Telemetry
         }
 
         $bucket = &$this->_buckets[$this->_current];
-        $bucket['saw_root'] = true;
 
         // First non-empty wins: identity must not move under a report that has
         // already been attributed.
@@ -401,7 +440,7 @@ class Mailchimp_Telemetry
 
         $seed    = $bucket['store_url'] ? $bucket['store_url'] : $bucket['install_id'];
         $divisor = $bucket['saw_root'] ? self::SAMPLE_ROOT : self::SAMPLE_OTHER;
-        $window  = floor(time() / self::SAMPLE_WINDOW_SEC);
+        $window  = (int)floor(time() / self::SAMPLE_WINDOW_SEC);
 
         if ((crc32($seed . $window) & 0x7fffffff) % $divisor !== 0) {
             return 'skip';
@@ -426,7 +465,7 @@ class Mailchimp_Telemetry
             'bid'        => md5(uniqid('', true)),
             'install_id' => $bucket['install_id'],
             'dc'         => $bucket['dc'],
-            'php'        => PHP_VERSION,
+            'php'        => self::phpVersion(),
             'calls'      => $bucket['calls'],
             'errors'     => $bucket['errors'],
             'time_ms'    => $bucket['time_ms'],
@@ -507,6 +546,18 @@ class Mailchimp_Telemetry
      */
     private function contactAllowed()
     {
+        if ($this->_contactAllowed !== null) {
+            return $this->_contactAllowed;
+        }
+
+        return $this->readContactAllowed();
+    }
+
+    /**
+     * @return bool
+     */
+    private function readContactAllowed()
+    {
         if (!$this->_helper || !method_exists($this->_helper, 'getConfigValue')) {
             return true;
         }
@@ -514,6 +565,10 @@ class Mailchimp_Telemetry
         try {
             $value = $this->_helper->getConfigValue(self::CONTACT_CONFIG);
         } catch (Exception $e) {
+            return true;
+        } catch (Throwable $t) {
+            // On PHP 7+ an Error is not an Exception, and a host that is broken
+            // enough to raise one must not take the store's request with it.
             return true;
         }
 
@@ -529,12 +584,26 @@ class Mailchimp_Telemetry
      */
     private function moduleVersion()
     {
+        if ($this->_moduleVersion !== null) {
+            return $this->_moduleVersion;
+        }
+
+        return $this->readModuleVersion();
+    }
+
+    /**
+     * @return string|null
+     */
+    private function readModuleVersion()
+    {
         if (!$this->_helper || !method_exists($this->_helper, 'getModuleVersion')) {
             return null;
         }
         try {
             $version = $this->_helper->getModuleVersion();
         } catch (Exception $e) {
+            return null;
+        } catch (Throwable $t) {
             return null;
         }
 
@@ -563,6 +632,8 @@ class Mailchimp_Telemetry
             $ch = curl_init();
         } catch (Exception $e) {
             return;
+        } catch (Throwable $t) {
+            return;
         }
         if (!$ch) {
             return;
@@ -575,6 +646,12 @@ class Mailchimp_Telemetry
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        // Without this the millisecond timeouts below are unreliable on builds
+        // that resolve DNS synchronously, and the timeout fence is the whole
+        // safety argument for reporting from inside a web request.
+        if (defined('CURLOPT_NOSIGNAL')) {
+            curl_setopt($ch, CURLOPT_NOSIGNAL, true);
+        }
 
         $connect = $cli ? self::CONNECT_CLI_MS : self::CONNECT_WEB_MS;
         $total   = $cli ? self::TOTAL_CLI_MS : self::TOTAL_WEB_MS;
@@ -588,6 +665,25 @@ class Mailchimp_Telemetry
 
         curl_exec($ch);
         curl_close($ch);
+    }
+
+    /**
+     * The PHP version, without the distribution's build suffix.
+     *
+     * Packaged builds report things like 8.1.2-1ubuntu2.14, which is longer
+     * than the field allows and carries nothing worth comparing across stores.
+     *
+     * @return string
+     */
+    public static function phpVersion()
+    {
+        if (defined('PHP_MAJOR_VERSION')) {
+            return PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . '.' . PHP_RELEASE_VERSION;
+        }
+
+        $parts = explode('-', PHP_VERSION, 2);
+
+        return $parts[0];
     }
 
     /**
@@ -699,6 +795,23 @@ class Mailchimp_Telemetry
         }
 
         return $out;
+    }
+
+    /**
+     * The datacenter suffix, or null when it does not look like one.
+     *
+     * It is derived by splitting the API key, so a malformed key yields a
+     * malformed value. Reporting nothing is better than reporting a fragment
+     * of somebody's key under a field name that says datacenter.
+     *
+     * @param  string $dc
+     * @return string|null
+     */
+    public static function validDc($dc)
+    {
+        $dc = strtolower(trim((string)$dc));
+
+        return preg_match('/^[a-z]{2,4}[0-9]{1,3}$/', $dc) ? $dc : null;
     }
 
     /**
