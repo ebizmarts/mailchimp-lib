@@ -45,9 +45,15 @@ that is **Stores → Configuration → Mailchimp → Diagnostics → Include you
 account contact details**, and setting it to No leaves those two fields out.
 Everything else keeps working.
 
-An unanswered setting is read as permission rather than refusal, because an
-installation upgrading from a version that predates the switch has never been
-asked, and that is not the same as declining.
+**If the host cannot be asked, nothing is sent.** This library can be installed
+on a host that has no such setting — its version constraint is a floor, so an
+older extension can acquire this version without acquiring the switch. On those
+installs the merchant has no way to decline, so the two fields are simply
+withheld rather than treated as consented.
+
+Where the switch does exist, an unanswered one is read as permission rather than
+refusal: an installation upgrading from a version that predates the field has
+never been asked, and that is not the same as declining.
 
 ### How often
 
