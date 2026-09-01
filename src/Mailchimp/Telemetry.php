@@ -171,9 +171,14 @@ class Mailchimp_Telemetry
      */
     private $_forced = false;
 
+    /**
+     * Reads the operator escape hatch, and nothing else.
+     *
+     * Deliberately does no work: an installation that never reports should not
+     * pay for this object existing.
+     */
     public function __construct()
     {
-        // An operator escape hatch, deliberately not a merchant setting.
         $kill = getenv(self::KILL_ENV);
         if ($kill === false) {
             return;
@@ -768,7 +773,9 @@ class Mailchimp_Telemetry
         }
         $version = '';
 
-        $path = dirname(dirname(__DIR__)) . '/composer.json';
+        // dirname(__FILE__) rather than __DIR__, which this package's declared
+        // PHP floor of 5.2 predates.
+        $path = dirname(dirname(dirname(__FILE__))) . '/composer.json';
         if (!is_readable($path)) {
             return $version;
         }
