@@ -49,7 +49,10 @@ Everything else keeps working.
 on a host that has no such setting — its version constraint is a floor, so an
 older extension can acquire this version without acquiring the switch. On those
 installs the merchant has no way to decline, so the two fields are simply
-withheld rather than treated as consented.
+withheld rather than treated as consented, and the report says
+`contact_unconfigured` rather than `contact_opt_out`. A refusal and an
+installation that was never able to ask are different facts, and only the first
+is a decision by the merchant.
 
 Where the switch does exist, an unanswered one is read as permission rather than
 refusal: an installation upgrading from a version that predates the field has
