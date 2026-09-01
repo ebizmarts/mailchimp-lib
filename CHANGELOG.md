@@ -1,5 +1,58 @@
 # Change Log
 
+## [3.0.47](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.47) (2026-09-01)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.46...3.0.47)
+
+**Implemented enhancements:**
+
+- Report how the Mailchimp API behaves for an installation [\#70](https://github.com/ebizmarts/mailchimp-lib/pull/70)
+
+  Counts calls, failures and response times per endpoint family and reports them
+  to the Ebizmarts service, so a connection problem can be diagnosed without
+  asking the merchant for logs.
+
+  No customer data, no order data, no request or response bodies, and never the
+  API key — the installation id is a truncated `sha256` of it. The account
+  owner's name and address are sent only while
+  `mailchimp/telemetry/share_contact` allows it.
+
+  The sync cron reports on a schedule derived from a hash of the store itself,
+  so a busy installation does not report more often than a quiet one and the
+  whole population does not report at the same moment: about four times a day.
+  Other background processes are sporadic rather than regular, so asking them to
+  coincide with a scheduled window would make them nearly silent; they are
+  sampled one in eight per process instead. Web requests always report, because
+  there are few of them and their timing is the signal.
+
+  Reporting is bounded by its own time budget and never raises: anything it
+  cannot do, it stops doing. `MC_TELEMETRY=0` switches it off entirely, and
+  `MC_TELEMETRY=force` skips the sampling for testing.
+
+## [3.0.46](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.46) (2026-06-19)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.45...3.0.46)
+
+**Fixed bugs:**
+
+- Undefined array key [\#68](https://github.com/ebizmarts/mailchimp-lib/issues/68)
+
+## [3.0.45](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.45) (2026-01-26)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.44...3.0.45)
+
+**Implemented enhancements:**
+
+- Add member events
+
+## [3.0.44](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.44) (2025-03-14)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.43...3.0.44)
+
+**Fixed bugs:**
+
+- Issue with versions + packagist [\#66](https://github.com/ebizmarts/mailchimp-lib/issues/66)
+
 ## [3.0.43](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.43) (2024-12-09)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.42...3.0.43)
