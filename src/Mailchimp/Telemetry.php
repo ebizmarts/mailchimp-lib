@@ -234,6 +234,40 @@ class Mailchimp_Telemetry
     }
 
     /**
+     * The Mailchimp store this store view syncs into, told by the host.
+     *
+     * Not harvested from a request path, and deliberately so. It IS visible in
+     * a path when the caller addresses a store directly — `ecommerce/stores/<id>`
+     * — but the ecommerce sync submits all of its per-store work as one POST to
+     * `batches`, with the store id inside each operation in the body. So a
+     * healthy cron process doing a full sync would observe nothing, and a null
+     * would come to mean both "this install has no Mailchimp store" and "this
+     * process never addressed one by path".
+     *
+     * Reading it out of the body would close that, and would also cost the
+     * promise at the top of this file, which says no part of a request's
+     * contents is recorded. That promise is worth more absolute than qualified:
+     * an exception for a store id is defensible, and so is the next one.
+     *
+     * The host already knows this value, exactly as it knows the store URL, so
+     * it is passed in for the same reason and by the same route.
+     *
+     * @param  string $mailchimpStoreId
+     * @return void
+     */
+    public function setMailchimpStoreId($mailchimpStoreId)
+    {
+        // First non-empty wins, and here that matters more than it does for the
+        // path: a host that calls this once per store view would otherwise
+        // re-point the open bucket at whichever store it configured last.
+        if ($this->_current !== null && isset($this->_buckets[$this->_current])) {
+            if (!$this->_buckets[$this->_current]['mc_store_id'] && $mailchimpStoreId) {
+                $this->_buckets[$this->_current]['mc_store_id'] = (string)$mailchimpStoreId;
+            }
+        }
+    }
+
+    /**
      * @param  string $userAgent
      * @return void
      */

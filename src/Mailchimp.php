@@ -229,6 +229,21 @@ class Mailchimp
         $this->_telemetry->setStoreUrl($storeURL);
     }
 
+    /**
+     * The Mailchimp store this store view syncs into.
+     *
+     * Passed through to the telemetry, which cannot observe it: the ecommerce
+     * sync posts its per-store work to `batches` with the store id in the body,
+     * and the telemetry only ever looks at the path.
+     *
+     * @param  string $mailchimpStoreId
+     * @return void
+     */
+    public function setMailchimpStoreId($mailchimpStoreId)
+    {
+        $this->_telemetry->setMailchimpStoreId($mailchimpStoreId);
+    }
+
     public function setUserAgent($userAgent)
     {
         if (!$this->_ch) {
