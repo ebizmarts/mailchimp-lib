@@ -15,7 +15,8 @@
   No customer data, no order data, no request or response bodies, and never the
   API key — the installation id is a truncated `sha256` of it. The account
   owner's name and address are sent only while
-  `mailchimp/telemetry/share_contact` allows it.
+  `mailchimp/telemetry/share_contact` allows it, and not at all on a host with
+  no such setting, where the merchant would have no way to decline.
 
   The sync cron reports on a schedule derived from a hash of the store itself,
   so a busy installation does not report more often than a quiet one and the

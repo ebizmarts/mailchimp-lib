@@ -234,6 +234,40 @@ class Mailchimp_Telemetry
     }
 
     /**
+     * The Mailchimp store this store view syncs into, told by the host.
+     *
+     * Not harvested from a request path, and deliberately so. It IS visible in
+     * a path when the caller addresses a store directly — `ecommerce/stores/<id>`
+     * — but the ecommerce sync submits all of its per-store work as one POST to
+     * `batches`, with the store id inside each operation in the body. So a
+     * healthy cron process doing a full sync would observe nothing, and a null
+     * would come to mean both "this install has no Mailchimp store" and "this
+     * process never addressed one by path".
+     *
+     * Reading it out of the body would close that, and would also cost the
+     * promise at the top of this file, which says no part of a request's
+     * contents is recorded. That promise is worth more absolute than qualified:
+     * an exception for a store id is defensible, and so is the next one.
+     *
+     * The host already knows this value, exactly as it knows the store URL, so
+     * it is passed in for the same reason and by the same route.
+     *
+     * @param  string $mailchimpStoreId
+     * @return void
+     */
+    public function setMailchimpStoreId($mailchimpStoreId)
+    {
+        // First non-empty wins, and here that matters more than it does for the
+        // path: a host that calls this once per store view would otherwise
+        // re-point the open bucket at whichever store it configured last.
+        if ($this->_current !== null && isset($this->_buckets[$this->_current])) {
+            if (!$this->_buckets[$this->_current]['mc_store_id'] && $mailchimpStoreId) {
+                $this->_buckets[$this->_current]['mc_store_id'] = (string)$mailchimpStoreId;
+            }
+        }
+    }
+
+    /**
      * @param  string $userAgent
      * @return void
      */
@@ -599,12 +633,22 @@ class Mailchimp_Telemetry
     }
 
     /**
-     * Whether the merchant has declined sharing the contact pair.
+     * Whether the contact pair may be sent.
      *
-     * An absent value means on. A helper too old to know the setting returns
-     * nothing, and that must read as "not configured", never as a merchant
-     * having said no — this library updates independently of the extension
-     * that owns the setting, so most installs will be in exactly that state.
+     * Two different absences, answered differently.
+     *
+     * A host that cannot be asked — no helper, or one too old to know the
+     * setting — has no switch in its admin either, so the merchant has no way
+     * to decline. Sending in that state would be taking silence from someone
+     * who was never given a way to speak, so nothing is sent. This library
+     * updates independently of the extension that owns the setting, and its
+     * constraint is a floor rather than a pin, so an install can acquire this
+     * version without acquiring the switch: that is the case this covers.
+     *
+     * A host that CAN be asked and answers nothing is a different fact. The
+     * switch exists, the merchant can reach it, and an unanswered setting is
+     * not a refusal — an install upgrading from a version that predates the
+     * field has simply never been asked. That still reads as permitted.
      *
      * @return bool
      */
@@ -622,8 +666,9 @@ class Mailchimp_Telemetry
      */
     private function readContactAllowed()
     {
+        // No way to ask means no way for the merchant to decline.
         if (!$this->_helper || !method_exists($this->_helper, 'getConfigValue')) {
-            return true;
+            return false;
         }
 
         try {
