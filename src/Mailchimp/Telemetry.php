@@ -152,11 +152,6 @@ class Mailchimp_Telemetry
     private $_helper = null;
 
     /**
-     * @var string|null
-     */
-    private $_storeUrl = null;
-
-    /**
      * @var bool|null latched when the helper is set
      */
     private $_contactAllowed = null;
@@ -221,10 +216,11 @@ class Mailchimp_Telemetry
      */
     public function setStoreUrl($storeUrl)
     {
-        $this->_storeUrl = $storeUrl;
         // The URL is re-set per store view, so it belongs to the open bucket
         // rather than to the process: two store views in one process would
-        // otherwise both report whichever URL happened to be set last.
+        // otherwise both report whichever URL happened to be set last. Keeping
+        // a copy on the instance would be the bug this guards against, so there
+        // is none.
         if ($this->_current !== null && isset($this->_buckets[$this->_current])) {
             if (!$this->_buckets[$this->_current]['store_url']) {
                 $this->_buckets[$this->_current]['store_url'] = $storeUrl;
