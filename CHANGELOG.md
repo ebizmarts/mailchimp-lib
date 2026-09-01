@@ -10,30 +10,24 @@
 
   Counts calls, failures and response times per endpoint family and reports them
   to the Ebizmarts service, so a connection problem can be diagnosed without
-  asking the merchant for logs. No customer or order data is ever included, and
-  the account owner's name and address are sent only while
+  asking the merchant for logs.
+
+  No customer data, no order data, no request or response bodies, and never the
+  API key — the installation id is a truncated `sha256` of it. The account
+  owner's name and address are sent only while
   `mailchimp/telemetry/share_contact` allows it.
 
-  Reporting is sampled from a hash of the store itself, so a busy installation
-  does not report more often than a quiet one, and the whole population does not
-  report at the same moment. It is bounded by its own time budget and never
-  raises: anything it cannot do, it stops doing.
+  The sync cron reports on a schedule derived from a hash of the store itself,
+  so a busy installation does not report more often than a quiet one and the
+  whole population does not report at the same moment: about four times a day.
+  Other background processes are sporadic rather than regular, so asking them to
+  coincide with a scheduled window would make them nearly silent; they are
+  sampled one in eight per process instead. Web requests always report, because
+  there are few of them and their timing is the signal.
 
-**Fixed bugs:**
-
-- Fix attribution and identity defects in API status reporting [\#71](https://github.com/ebizmarts/mailchimp-lib/pull/71)
-
-  A second account inherited the store URL of the first, which also made both
-  share one reporting schedule. And an installation whose key had expired was
-  classified as anonymous, so precisely the installations worth hearing about
-  reported the least usefully and the most often.
-
-- Make the two QoS sampling divisors coprime [\#72](https://github.com/ebizmarts/mailchimp-lib/pull/72)
-
-  The two lanes shared a factor, so one set of firing windows was a subset of
-  the other and nothing was spread. Measured over 5000 store URLs across a day:
-  40 reports per installation become 8, and the overlap between lanes falls from
-  100% to 1.5%.
+  Reporting is bounded by its own time budget and never raises: anything it
+  cannot do, it stops doing. `MC_TELEMETRY=0` switches it off entirely, and
+  `MC_TELEMETRY=force` skips the sampling for testing.
 
 ## [3.0.46](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.46) (2026-06-19)
 

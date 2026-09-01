@@ -51,12 +51,17 @@ asked, and that is not the same as declining.
 
 ### How often
 
-Background processes report on a schedule derived from a hash of the store
+The extension's sync cron reports on a schedule derived from a hash of the store
 itself, so a busy installation does not report more often than a quiet one and
-the whole population does not report at the same moment. That works out at
-about **eight reports per installation per day**, measured across 5000 store
-URLs. Web requests report each time, because there are few of them and their
-timing is the signal being measured.
+the whole population does not report at the same moment. That process runs every
+five minutes, which works out at **about four reports per installation per day**.
+
+Other background processes — webhook runs, cleanups — are sporadic rather than
+regular, so a schedule would ask them to coincide with a firing window on top of
+being selected. They are sampled **one in eight per process** instead.
+
+Web requests report each time, because there are few of them and their timing is
+the signal being measured.
 
 At most four reports leave any one process.
 
@@ -70,6 +75,11 @@ retried, and any error in the reporting path is swallowed rather than allowed
 to reach the store.
 
 Reports go to `https://apps.ebizmarts.com/mc4magento/v1/qos`.
+
+Setting the environment variable `MC_TELEMETRY=0` switches reporting off
+entirely. `MC_TELEMETRY=force` skips the sampling so every eligible process
+reports, which exists so the feature can be verified without leaving cron
+running for hours; it changes nothing else.
 
 ## License
 

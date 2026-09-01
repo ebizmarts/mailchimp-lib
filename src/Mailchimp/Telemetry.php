@@ -43,6 +43,24 @@ class Mailchimp_Telemetry
     const CONTACT_CONFIG = 'mailchimp/telemetry/share_contact';
     const KILL_ENV       = 'MC_TELEMETRY';
 
+    /**
+     * Value of KILL_ENV that skips the sampling instead of switching reporting
+     * off. `MC_TELEMETRY=0` disables; `MC_TELEMETRY=force` reports on every
+     * eligible process.
+     *
+     * For testing. Without it the only way to see this work end to end is to
+     * leave cron running for hours: a hand-run sync is one process, so one roll
+     * at 1 in 72, and five of them have a 93% chance of producing nothing at
+     * all. That has already cost a tester a day and the reasonable conclusion
+     * that the feature was broken.
+     *
+     * It skips the sampling and nothing else. An empty bucket still does not
+     * report, the per-process send cap still applies, and the time budget and
+     * timeouts are unchanged — so it cannot make a test pass that would fail
+     * in production for any reason other than luck.
+     */
+    const FORCE_ENV_VALUE = 'force';
+
     /** A report over this size is not worth sending; the receiver rejects it anyway. */
     const MAX_BYTES = 8192;
 
@@ -56,25 +74,39 @@ class Mailchimp_Telemetry
     const MAX_SENDS = 4;
 
     /**
-     * How often a process that saw the account root reports, and how often one
-     * that did not.
+     * How often a process that saw the account root reports.
      *
      * The extension's sync cron asks for the account root every five minutes,
      * so ~288 processes a day are eligible. Reporting from all of them would
      * cost about three hundred reports per installation per day to say very
-     * nearly the same thing three hundred times. The divisors turn that into
-     * roughly four each, so about eight a day from an installation that runs
-     * both kinds of process.
+     * nearly the same thing three hundred times. This divisor turns that into
+     * roughly four.
      *
-     * The two are coprime on purpose. They share one hash seed, so a common
-     * factor would make one set of windows a subset of the other: every report
-     * an installation sent would land in the same few windows, and the
-     * identified one would never arrive on a window the other had not already
-     * used. Coprime divisors leave the two lanes independent, overlapping on
-     * about 1.5% of windows instead of all of them.
+     * Deterministic on the store and the window rather than a die roll, so an
+     * installation reports on a regular, predictable cadence and the resulting
+     * series are comparable across installations. That only works because
+     * these processes are regular: one occurs in every window.
+     *
+     * Processes that never asked for the account root are sampled differently
+     * — see SAMPLE_OTHER_IN.
      */
-    const SAMPLE_ROOT  = 72;
-    const SAMPLE_OTHER = 71;
+    const SAMPLE_ROOT = 72;
+
+    /**
+     * How often a process that did NOT see the account root reports: one in
+     * this many, drawn per process.
+     *
+     * A die roll rather than the window hash, and the difference matters more
+     * than it looks. These processes are sporadic — webhook runs, cleanups —
+     * so a window-based rule would require them to coincide with a firing
+     * window on top of being selected, and a store running ten of them a day
+     * would report about once a week instead of once a day. The roll asks only
+     * that the process happen.
+     *
+     * It also means these two lanes share nothing, so neither can be a subset
+     * of the other and there is no divisor to keep coprime.
+     */
+    const SAMPLE_OTHER_IN = 8;
 
     /** The window the sampling hash is stable within. */
     const SAMPLE_WINDOW_SEC = 300;
@@ -139,12 +171,24 @@ class Mailchimp_Telemetry
      */
     private $_userAgent = null;
 
+    /**
+     * @var bool sampling is skipped for this process
+     */
+    private $_forced = false;
+
     public function __construct()
     {
         // An operator escape hatch, deliberately not a merchant setting.
         $kill = getenv(self::KILL_ENV);
-        if ($kill !== false && trim($kill) === '0') {
+        if ($kill === false) {
+            return;
+        }
+
+        $kill = trim($kill);
+        if ($kill === '0') {
             $this->_enabled = false;
+        } elseif ($kill === self::FORCE_ENV_VALUE) {
+            $this->_forced = true;
         }
     }
 
@@ -446,15 +490,26 @@ class Mailchimp_Telemetry
             return 'full';
         }
 
-        $seed    = $bucket['store_url'] ? $bucket['store_url'] : $bucket['install_id'];
-        $divisor = $bucket['saw_root'] ? self::SAMPLE_ROOT : self::SAMPLE_OTHER;
-        $window  = (int)floor(time() / self::SAMPLE_WINDOW_SEC);
+        if ($this->_forced) {
+            // Sampling skipped, not the guards around it. A forced process
+            // still reports what it would have reported.
+            return $bucket['saw_root'] ? 'full' : 'lean';
+        }
 
-        if ((crc32($seed . $window) & 0x7fffffff) % $divisor !== 0) {
+        if (!$bucket['saw_root']) {
+            // Sporadic processes: one roll each, so being rare does not also
+            // mean being invisible.
+            return mt_rand(1, self::SAMPLE_OTHER_IN) === 1 ? 'lean' : 'skip';
+        }
+
+        $seed   = $bucket['store_url'] ? $bucket['store_url'] : $bucket['install_id'];
+        $window = (int)floor(time() / self::SAMPLE_WINDOW_SEC);
+
+        if ((crc32($seed . $window) & 0x7fffffff) % self::SAMPLE_ROOT !== 0) {
             return 'skip';
         }
 
-        return $bucket['saw_root'] ? 'full' : 'lean';
+        return 'full';
     }
 
     /**
