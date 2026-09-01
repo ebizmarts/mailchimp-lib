@@ -615,9 +615,16 @@ class Mailchimp_Telemetry
             $out['module_version'] = $moduleVersion;
         }
 
-        // The contact pair is the only part a merchant can decline, and the
-        // flag travels either way so the receiver can tell "declined" from
-        // "this request happened not to carry it".
+        // The contact pair is the only part a merchant can decline, and a flag
+        // travels when it is absent so the receiver can tell that from "this
+        // request happened not to carry it".
+        //
+        // Two reasons for absence, and they are different facts. A refusal is a
+        // decision about the merchant and should be respected permanently. A
+        // host with no setting is a fact about the installation — an extension
+        // too old to have asked — which an upgrade changes. Reporting both as
+        // an opt-out would put words in the merchant's mouth, and would make
+        // the two indistinguishable to anyone counting.
         if ($this->contactAllowed()) {
             if ($bucket['owner_name']) {
                 $out['owner_name'] = $bucket['owner_name'];
@@ -625,11 +632,27 @@ class Mailchimp_Telemetry
             if ($bucket['owner_email']) {
                 $out['owner_email'] = $bucket['owner_email'];
             }
-        } else {
+        } elseif ($this->contactSwitchExists()) {
             $out['contact_opt_out'] = true;
+        } else {
+            $out['contact_unconfigured'] = true;
         }
 
         return $out;
+    }
+
+    /**
+     * Whether the host has a setting the merchant could answer.
+     *
+     * Cheap and cannot throw, so it is asked when the report is built rather
+     * than latched. It distinguishes a merchant who declined from an
+     * installation that was never able to ask.
+     *
+     * @return bool
+     */
+    private function contactSwitchExists()
+    {
+        return $this->_helper && method_exists($this->_helper, 'getConfigValue');
     }
 
     /**
