@@ -19,6 +19,7 @@ require_once 'Mailchimp/AutomationEmails.php';
 require_once 'Mailchimp/AutomationEmailsQueue.php';
 require_once 'Mailchimp/AutomationRemovedSubscribers.php';
 require_once 'Mailchimp/Error.php';
+require_once 'Mailchimp/HttpError.php';
 require_once 'Mailchimp/AuthorizedApps.php';
 require_once 'Mailchimp/BatchOperations.php';
 require_once 'Mailchimp/CampaignFolders.php';
@@ -30,6 +31,7 @@ require_once 'Mailchimp/Conversations.php';
 require_once 'Mailchimp/ConversationsMessages.php';
 require_once 'Mailchimp/Ecommerce.php';
 require_once 'Mailchimp/EcommerceStores.php';
+require_once 'Mailchimp/EcommerceStore.php';
 require_once 'Mailchimp/EcommerceCarts.php';
 require_once 'Mailchimp/EcommerceCustomers.php';
 require_once 'Mailchimp/EcommerceOrders.php';
@@ -73,7 +75,7 @@ require_once 'Mailchimp/TemplatesDefaultContent.php';
 
 class Mailchimp
 {
-    protected $_apiKey;
+    protected $_apiKey = '';
     protected $_ch = null;
     protected $_root    = 'https://api.mailchimp.com/3.0';
     protected $_debug   = false;
@@ -113,18 +115,14 @@ class Mailchimp
 
     /**
      * Mailchimp constructor.
-     * @param string $apiKey
-     * @param array $opts
-     * @param string $userAgent
+     *
+     * Takes no arguments: the key arrives through setApiKey(), and the helper,
+     * store URL and user agent through their own setters.
      */
     public function __construct()
     {
-
         $this->_ch = curl_init();
 
-        if (isset($opts['CURLOPT_FOLLOWLOCATION']) && $opts['CURLOPT_FOLLOWLOCATION'] === true) {
-            curl_setopt($this->_ch, CURLOPT_FOLLOWLOCATION, true);
-        }
         $this->_telemetry = new Mailchimp_Telemetry();
         $this->_telemetry->setUserAgent('Ebizmart-MailChimp-PHP/3.0.0');
         curl_setopt($this->_ch, CURLOPT_USERAGENT, 'Ebizmart-MailChimp-PHP/3.0.0');
@@ -194,12 +192,12 @@ class Mailchimp
     {
         $this->_root    = 'https://api.mailchimp.com/3.0';
         if (!$this->_ch) {
-            $this->init();
+            $this->_ch = curl_init();
         }
-        $this->_apiKey   = $apiKey;
+        $this->_apiKey   = (string)$apiKey;
         $dc             = 'us1';
         if (strstr($this->_apiKey, "-")){
-            list($key, $dc) = explode("-", $this->_apiKey, 2);
+            list(, $dc) = explode("-", $this->_apiKey, 2);
             if (!$dc) {
                 $dc = "us1";
             }
@@ -234,7 +232,7 @@ class Mailchimp
     public function setUserAgent($userAgent)
     {
         if (!$this->_ch) {
-            $this->init();
+            $this->_ch = curl_init();
         }
         curl_setopt($this->_ch, CURLOPT_USERAGENT, $userAgent);
         $this->_telemetry->setUserAgent($userAgent);
