@@ -80,17 +80,22 @@ class Mailchimp_Telemetry
      * so ~288 processes a day are eligible. Reporting from all of them would
      * cost about three hundred reports per installation per day to say very
      * nearly the same thing three hundred times. This divisor turns that into
-     * roughly four.
+     * roughly twenty-four — one an hour.
      *
      * Deterministic on the store and the window rather than a die roll, so an
      * installation reports on a regular, predictable cadence and the resulting
      * series are comparable across installations. That only works because
      * these processes are regular: one occurs in every window.
      *
+     * A note for whoever tunes this next: the gap between reports does not
+     * keep the network path warm. Even at one an hour a report can find DNS
+     * cold, so the connect budget below has to absorb a cold lookup on its
+     * own and cadence is not a substitute for it.
+     *
      * Processes that never asked for the account root are sampled differently
      * — see SAMPLE_OTHER_IN.
      */
-    const SAMPLE_ROOT = 72;
+    const SAMPLE_ROOT = 12;
 
     /**
      * How often a process that did NOT see the account root reports: one in
@@ -111,15 +116,41 @@ class Mailchimp_Telemetry
     /** The window the sampling hash is stable within. */
     const SAMPLE_WINDOW_SEC = 300;
 
-    /** Milliseconds the whole reporting step may spend, by context. */
+    /**
+     * Milliseconds the whole reporting step may spend, by context.
+     *
+     * Must stay at or above the matching TOTAL below, or it — not the per-request
+     * limit — becomes the effective ceiling from the second bucket onward.
+     */
     const BUDGET_WEB_MS = 400;
-    const BUDGET_CLI_MS = 1500;
+    const BUDGET_CLI_MS = 8000;
 
-    /** Per-request curl limits, by context. */
+    /**
+     * Per-request curl limits, by context.
+     *
+     * The gap between the two lanes is deliberate rather than an oversight to
+     * be tidied up.
+     *
+     * WEB spends latency a merchant is waiting on, and it is unsampled, so its
+     * budget is a latency cap first and a delivery budget second. It stays
+     * tight, and a web report on a cold path is dropped on purpose.
+     *
+     * CLI runs in cron, where nobody is waiting and a longer budget costs only
+     * that a background process exits a moment later. Its budget is sized to
+     * absorb a cold DNS resolution on a slow resolver, with room to spare: the
+     * two failure modes are not comparable, since too tight loses the report
+     * silently and too generous costs nothing anyone notices.
+     *
+     * CONNECT covers DNS, TCP and TLS, and it is the one that decides whether
+     * the request happens at all — when it expires, nothing has been
+     * transmitted. TOTAL is the gentler failure, because by then the body is
+     * already on the wire, so it sits only far enough above CONNECT to
+     * transmit rather than trying to cover the answer as well.
+     */
     const CONNECT_WEB_MS = 150;
     const TOTAL_WEB_MS   = 250;
-    const CONNECT_CLI_MS = 300;
-    const TOTAL_CLI_MS   = 500;
+    const CONNECT_CLI_MS = 2000;
+    const TOTAL_CLI_MS   = 2500;
 
     /**
      * @var array bucket rows keyed by install id
