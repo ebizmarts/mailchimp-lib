@@ -63,7 +63,8 @@ never been asked, and that is not the same as declining.
 The extension's sync cron reports on a schedule derived from a hash of the store
 itself, so a busy installation does not report more often than a quiet one and
 the whole population does not report at the same moment. That process runs every
-five minutes, which works out at **about four reports per installation per day**.
+five minutes, and one window in twelve is selected, which works out at **about
+twenty-four reports per installation per day** — roughly one an hour.
 
 Other background processes — webhook runs, cleanups — are sporadic rather than
 regular, so a schedule would ask them to coincide with a firing window on top of
@@ -77,8 +78,11 @@ At most four reports leave any one process.
 ### What it costs
 
 Reporting is bounded and never raises. It has a total budget of 400 ms inside a
-web request and 1500 ms in a background process, with per-request timeouts of
-250 ms and 500 ms. Anything it cannot do within that, it stops doing: a report
+web request and 8000 ms in a background process, with per-request timeouts of
+250 ms and 2500 ms. The background budget is the more generous of the two
+because nobody is waiting on it and a cold DNS lookup has to fit inside it,
+while the web budget is a latency cap first: a web report on a slow path is
+dropped on purpose. Anything it cannot do within that, it stops doing: a report
 that would be too large is dropped, a host that cannot be reached is not
 retried, and any error in the reporting path is swallowed rather than allowed
 to reach the store.
