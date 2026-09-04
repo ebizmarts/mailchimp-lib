@@ -1,5 +1,34 @@
 # Change Log
 
+## [3.0.48](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.48) (2026-09-04)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.47...3.0.48)
+
+**Fixed bugs:**
+
+- Latest version (3.0.47) is not fully compatible with PHP 8.5 [\#79](https://github.com/ebizmarts/mailchimp-lib/issues/79)
+
+  `curl_close()` does nothing on PHP 8 and is deprecated in 8.5, so the reporting
+  path raised a deprecation notice on every report. The call is now guarded by
+  `PHP_VERSION_ID < 80000` rather than deleted: the library still declares
+  `php >=5.2.0`, and on those versions the handle is a resource that this call is
+  what frees.
+
+- Contain a failed report so it cannot cost the other buckets theirs [\#81](https://github.com/ebizmarts/mailchimp-lib/pull/81)
+
+  A failure while reporting one store view unwound out of the reporting loop
+  entirely, so every store view after it went unreported without any sign that it
+  had. Each send is now contained on its own, and the destructor that drives the
+  reporting catches `Throwable` as well as `Exception`, since an error escaping a
+  destructor during shutdown is fatal.
+
+**Documentation:**
+
+The README described the reporting cadence and time budgets as they stood
+before the last change in 3.0.47, which raised the cron lane to one report an
+hour and widened its budget to absorb a cold DNS lookup. The numbers now match
+the code. The 3.0.47 entry below has been corrected for the same reason.
+
 ## [3.0.47](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.47) (2026-09-01)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.46...3.0.47)
@@ -20,7 +49,8 @@
 
   The sync cron reports on a schedule derived from a hash of the store itself,
   so a busy installation does not report more often than a quiet one and the
-  whole population does not report at the same moment: about four times a day.
+  whole population does not report at the same moment: about twenty-four times a
+  day, roughly one an hour.
   Other background processes are sporadic rather than regular, so asking them to
   coincide with a scheduled window would make them nearly silent; they are
   sampled one in eight per process instead. Web requests always report, because
