@@ -827,7 +827,15 @@ class Mailchimp_Telemetry
         }
 
         curl_exec($ch);
-        curl_close($ch);
+
+        // Guarded rather than removed: the library still declares php >=5.2.0,
+        // where the handle is a resource that this call is what frees. On PHP 8
+        // the handle is an object released by refcount, the call does nothing,
+        // and 8.5 deprecates it. Every other version-sensitive line in this
+        // function is guarded the same way rather than assumed away.
+        if (PHP_VERSION_ID < 80000) {
+            curl_close($ch);
+        }
     }
 
     /**
