@@ -354,6 +354,10 @@ class Mailchimp
             }
         } catch (Exception $e) {
             // Diagnostics must never be the reason a request fails.
+        } catch (Throwable $t) {
+            // An error is not an Exception. Letting one escape a destructor
+            // during shutdown is fatal, which is the one outcome this whole
+            // path exists to avoid.
         }
     }
 }

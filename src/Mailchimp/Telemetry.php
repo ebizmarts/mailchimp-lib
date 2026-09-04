@@ -524,8 +524,19 @@ class Mailchimp_Telemetry
                 continue;
             }
 
-            $this->post($body, $cli);
+            // Counted before the attempt, and the attempt is contained: post()
+            // guards curl_init() but nothing after it, and flush() is reached
+            // from a destructor, so anything raised while reporting one bucket
+            // would otherwise abandon the loop and cost every remaining bucket
+            // its report -- silently, on a feature that only observes.
             $sent++;
+            try {
+                $this->post($body, $cli);
+            } catch (Exception $e) {
+                // Deliberately swallowed: see above.
+            } catch (Throwable $t) {
+                // Same, for errors outside the Exception hierarchy.
+            }
         }
     }
 
