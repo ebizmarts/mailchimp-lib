@@ -838,6 +838,7 @@ class Mailchimp_Telemetry
         }
 
         curl_exec($ch);
+        curl_close($ch);   // TEMPORARY: proving the gate fails the build
 
         // Guarded rather than removed: the library still declares php >=5.2.0,
         // where the handle is a resource that this call is what frees. On PHP 8
