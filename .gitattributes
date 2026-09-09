@@ -1,0 +1,10 @@
+# Development files, kept out of the package a merchant installs.
+#
+# Composer takes its dist from the repository archive, so anything not
+# excluded here lands in every store's vendor directory. The fixtures matter
+# most: they contain deliberately deprecated calls, which is the point of
+# them, and which is exactly what a merchant's own security or deprecation
+# scan would flag if they shipped.
+/.github            export-ignore
+/tools              export-ignore
+/.gitattributes     export-ignore
