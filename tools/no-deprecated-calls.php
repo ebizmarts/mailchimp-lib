@@ -100,6 +100,17 @@ function prevSignificant(array $tokens, $i)
 $findings = array();
 $scanned  = 0;
 
+// Hoisted: rebuilding this per token is wasted work and reads worse.
+$deniedLower = array_map('strtolower', $DENIED_CALLS);
+
+// String interpolation opens with an ARRAY token and closes with a PLAIN '}'.
+// `${name}` has the same shape; its token is gone in newer PHP, so it is only
+// added when the running version still defines it.
+$INTERPOLATION_OPENERS = array(T_CURLY_OPEN);
+if (defined('T_DOLLAR_OPEN_CURLY_BRACES')) {
+    $INTERPOLATION_OPENERS[] = constant('T_DOLLAR_OPEN_CURLY_BRACES');
+}
+
 foreach (collect($paths) as $file) {
     $tokens = token_get_all(file_get_contents($file));
     $scanned++;
@@ -149,12 +160,22 @@ foreach (collect($paths) as $file) {
             continue;
         }
 
+        // Without this the plain '}' that closes an interpolated string
+        // decrements a depth the opening brace never incremented, and the
+        // guard of the enclosing block is dropped early -- reporting code
+        // that is correctly guarded.
+        if (in_array($token[0], $INTERPOLATION_OPENERS, true)) {
+            $depth++;
+            $guards[$depth] = false;
+            continue;
+        }
+
         if ($token[0] !== T_STRING) {
             continue;
         }
 
         $name = $token[1];
-        $isCall     = in_array(strtolower($name), array_map('strtolower', $DENIED_CALLS), true);
+        $isCall     = in_array(strtolower($name), $deniedLower, true);
         $isConstant = in_array($name, $DENIED_CONSTANTS, true);
         if (!$isCall && !$isConstant) {
             continue;

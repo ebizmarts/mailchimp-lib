@@ -38,16 +38,20 @@ check('a call after the guard block has closed',      $reported('Cases.php:23'))
 check('a bare utf8_encode',                           $reported('Cases.php:35'));
 check('the deprecated FILTER_SANITIZE_STRING',        $reported('Cases.php:39'));
 check('a call after an if with no braces',            $reported('Cases.php:44'));
+check('a bare call following an interpolated string', $reported('Cases.php:61'));
 
 echo "must NOT be reported\n";
 check('the deliberate call inside a PHP_VERSION guard', !$reported('Cases.php:8'));
 check('a call nested deeper inside that guard',         !$reported('Cases.php:14'));
 check("'money_format' used as an array key",            !$reported('Cases.php:28'));
 check('a method that shares the name of a function',    !$reported('Cases.php:32'));
+// String interpolation opens with an array token and closes with a plain '}',
+// so a naive depth counter drops the enclosing guard and reports correct code.
+check('a guarded call after an interpolated string',    !$reported('Cases.php:54'));
 
 echo "exit status\n";
 check('non-zero when there are findings', $code === 1);
-check('exactly four findings',            (bool)preg_match('/4 finding\(s\)/', $output));
+check('exactly five findings',            (bool)preg_match('/5 finding\(s\)/', $output));
 
 if ($failures) {
     printf("\n%d check(s) failed\n", count($failures));

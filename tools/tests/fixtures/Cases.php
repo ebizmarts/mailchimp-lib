@@ -47,4 +47,18 @@ class Cases
     {
         return 'curl_close is not called here';
     }
+    public function guardedWithInterpolation($ch, $y)   // NO: la interpolacion no debe romper la guarda
+    {
+        if (PHP_VERSION_ID < 80000) {
+            $note = "closing handle for {$y}";
+            curl_close($ch);
+        }
+        return isset($note) ? $note : '';
+    }
+    public function interpolationThenBareCall($ch, $y)  // SI: la interpolacion no debe tapar una desnuda
+    {
+        $note = "about to close for {$y}";
+        curl_close($ch);
+        return $note;
+    }
 }
