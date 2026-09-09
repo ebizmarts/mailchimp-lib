@@ -1,0 +1,30 @@
+name: Deprecated calls
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: No unguarded deprecated calls
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      # The gate is tested before it is trusted. If this step fails the scan
+      # below means nothing, whatever it reports.
+      - name: Test the gate
+        run: php tools/tests/test-no-deprecated-calls.php
+
+      - name: Scan src for unguarded deprecated calls
+        run: php tools/no-deprecated-calls.php src
