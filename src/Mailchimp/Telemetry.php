@@ -957,6 +957,29 @@ class Mailchimp_Telemetry
      * audience an installation actually uses without asking Mailchimp for
      * anything, and without touching what a request contained.
      *
+     * HOW TO READ AN ABSENT mc_store_id. Because it is read from the path and
+     * from nowhere else, a null does NOT mean "this installation has no
+     * Mailchimp store". The ecommerce cron submits all of its per-store work as
+     * one POST to `batches`, and the store id lives inside each operation in
+     * the request body, which this deliberately never reads. So a process can
+     * do a great deal of work against a store and observe nothing about it.
+     *
+     * The report already carries the discriminator. Families are counted per
+     * call and emitted as `m`, so:
+     *
+     *   - mc_store_id present            -> store known, addressed by path
+     *   - null AND m.batches present     -> ecommerce work happened; the store
+     *                                       was simply never named in a path.
+     *                                       NOT evidence of absence.
+     *   - null AND m has no batches      -> a genuine candidate for "no store"
+     *
+     * One trap for anyone counting installations that way: a lean report
+     * carries no `m` block at all, so "no batches" and "no families" are
+     * different facts and only the first supports the third reading. A census
+     * has to require that `m` is present as its own condition rather than
+     * inferring it from the other identifying fields being absent, because a
+     * lean report can still be attributed to a real installation afterwards.
+     *
      * @param  string $path
      * @return array  keys mc_store_id and list_id, either may be null
      */
