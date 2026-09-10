@@ -1,5 +1,57 @@
 # Change Log
 
+## [3.0.49](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.49) (2026-09-10)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.48...3.0.49)
+
+**Implemented enhancements:**
+
+- Share contact wherever nobody has declined, including hosts with no switch [\#84](https://github.com/ebizmarts/mailchimp-lib/pull/84)
+
+  Contact sharing is on by default, and only an answer that says no is a refusal.
+  The reporting path previously withheld the contact pair from a host it could
+  not ask -- no helper, or one too old to know the setting -- on the grounds that
+  a merchant with no switch in their admin has no way to decline. Every other
+  kind of silence already read as permitted; this makes the four consistent.
+
+  A host too old to have the switch cannot acquire one from this library, only
+  by upgrading the extension, so those installations share until they do. The
+  admin field ships in extension release 103.4.82, so the remedy exists in a
+  published version.
+
+  `contact_unconfigured` is now emitted **alongside** the pair rather than
+  instead of it, and its meaning changes with it: it used to mean "no switch, so
+  nothing was sent" and now means "no switch, sent anyway". Consumers reading it
+  as "no contact for this installation" need to know.
+
+- Fail the build when a deprecated call appears unguarded [\#83](https://github.com/ebizmarts/mailchimp-lib/pull/83)
+
+  A deprecated call reached a release twice, and both times it was found by a
+  merchant rather than by us. `tools/no-deprecated-calls.php` now runs on every
+  push and fails the build for a deprecated call that is not wrapped in a version
+  guard. It tokenises rather than matching text, so a call inside a comment or a
+  string does not trip it, and it has its own test that pins both directions --
+  a check that cannot fail is worse than no check at all.
+
+  Development files are kept out of the installed package, so this costs nothing
+  to anyone consuming the library.
+
+**Documentation:**
+
+- Say how to read an absent `mc_store_id` [\#85](https://github.com/ebizmarts/mailchimp-lib/pull/85)
+
+  A null in that field means "no store was named in any request path this process
+  made", which is not the same fact as "this installation has no Mailchimp
+  store". The ecommerce cron submits its per-store work as a single POST to
+  `batches`, with the store id inside the request body, which the reporting path
+  deliberately never reads.
+
+  Nothing changes on the wire: families are already counted per call, so a null
+  with batch activity separates cleanly from a null without it. The docblock now
+  says so, including the one case where that reading goes wrong -- a lean report
+  carries no family block at all, so "no batches" and "no families" are different
+  facts.
+
 ## [3.0.48](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.48) (2026-09-04)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.47...3.0.48)
