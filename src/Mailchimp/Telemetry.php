@@ -658,15 +658,17 @@ class Mailchimp_Telemetry
         }
 
         // The contact pair is the only part a merchant can decline, and a flag
-        // travels when it is absent so the receiver can tell that from "this
-        // request happened not to carry it".
+        // travels so the receiver can tell a refusal from "this request
+        // happened not to carry it".
         //
-        // Two reasons for absence, and they are different facts. A refusal is a
-        // decision about the merchant and should be respected permanently. A
-        // host with no setting is a fact about the installation — an extension
-        // too old to have asked — which an upgrade changes. Reporting both as
-        // an opt-out would put words in the merchant's mouth, and would make
-        // the two indistinguishable to anyone counting.
+        // contact_unconfigured is emitted alongside the pair rather than
+        // instead of it. Since sharing is now on wherever nobody declined,
+        // contactAllowed() can only be false after reading config, which needs
+        // the helper — so an else branch here would be unreachable and the
+        // field would quietly stop existing. It still reports a real fact about
+        // the installation: no switch in its admin, which an extension upgrade
+        // changes. Anyone counting installs without a switch keeps their
+        // number; what it no longer implies is that no contact was sent.
         if ($this->contactAllowed()) {
             if ($bucket['owner_name']) {
                 $out['owner_name'] = $bucket['owner_name'];
@@ -674,10 +676,11 @@ class Mailchimp_Telemetry
             if ($bucket['owner_email']) {
                 $out['owner_email'] = $bucket['owner_email'];
             }
-        } elseif ($this->contactSwitchExists()) {
-            $out['contact_opt_out'] = true;
+            if (!$this->contactSwitchExists()) {
+                $out['contact_unconfigured'] = true;
+            }
         } else {
-            $out['contact_unconfigured'] = true;
+            $out['contact_opt_out'] = true;
         }
 
         return $out;
@@ -700,20 +703,23 @@ class Mailchimp_Telemetry
     /**
      * Whether the contact pair may be sent.
      *
-     * Two different absences, answered differently.
+     * Sharing is ON unless the merchant has declined. Only an answer that says
+     * no is a refusal; every other state — an unanswered setting, a setting
+     * that cannot be read, a host with no setting at all — means nobody has
+     * declined, and all of them read as permitted.
      *
-     * A host that cannot be asked — no helper, or one too old to know the
-     * setting — has no switch in its admin either, so the merchant has no way
-     * to decline. Sending in that state would be taking silence from someone
-     * who was never given a way to speak, so nothing is sent. This library
-     * updates independently of the extension that owns the setting, and its
-     * constraint is a floor rather than a pin, so an install can acquire this
-     * version without acquiring the switch: that is the case this covers.
+     * This is a deliberate reversal of the rule this function used to carry,
+     * which withheld from hosts that had no switch on the grounds that their
+     * merchant had no way to say no. The reversal is the product directive,
+     * recorded on the issue that requested it: sharing is on by default, and a
+     * merchant who wants it off installs the current extension and flips the
+     * switch. The argument against was made and answered rather than missed —
+     * a host too old to have the switch cannot acquire one from this library,
+     * only from an extension upgrade — and the directive accepts that.
      *
-     * A host that CAN be asked and answers nothing is a different fact. The
-     * switch exists, the merchant can reach it, and an unanswered setting is
-     * not a refusal — an install upgrading from a version that predates the
-     * field has simply never been asked. That still reads as permitted.
+     * The distinction between the two absences is not lost, it moves: an
+     * install with no switch still says so with contact_unconfigured, now
+     * alongside the pair rather than instead of it.
      *
      * @return bool
      */
@@ -731,9 +737,10 @@ class Mailchimp_Telemetry
      */
     private function readContactAllowed()
     {
-        // No way to ask means no way for the merchant to decline.
+        // No way to ask means nobody has declined, which is the same answer the
+        // three branches below give to every other kind of silence.
         if (!$this->_helper || !method_exists($this->_helper, 'getConfigValue')) {
-            return false;
+            return true;
         }
 
         try {
