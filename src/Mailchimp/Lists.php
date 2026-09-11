@@ -81,7 +81,7 @@ class Mailchimp_Lists extends Mailchimp_Abstract
         return $this->master->call('lists',$_params,Mailchimp::POST);
     }
     public function getLists($id=null,$fields=null,$excludeFields=null,$count=null,$offset=null,$beforeDateCreated=null,$sinceDateCreated=null,
-                                $beforeCampaignLastSent=null,$sinceCampaignLastSent=null,$email=null)
+                                $beforeCampaignLastSent=null,$sinceCampaignLastSent=null,$email=null,$includeTotalContacts=null)
     {
         $_params = array();
         if($fields)
@@ -119,6 +119,14 @@ class Mailchimp_Lists extends Mailchimp_Abstract
         if($email)
         {
             $_params['email'] = $email;
+        }
+        // Asking for it adds stats.total_contacts to the same response, at no
+        // extra request. Appended last so every existing positional caller is
+        // unaffected, and left off by default so nothing changes for a caller
+        // that does not want it.
+        if($includeTotalContacts)
+        {
+            $_params['include_total_contacts'] = 'true';
         }
         if($id) {
             return $this->master->call('lists/'.$id, $_params, Mailchimp::GET);
