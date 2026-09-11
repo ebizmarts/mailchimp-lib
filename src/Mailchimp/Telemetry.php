@@ -542,7 +542,18 @@ class Mailchimp_Telemetry
         // gained a key named member_count this would have written one
         // subscriber's numbers into the audience fields, silently and with the
         // right-looking shape.
-        $parts = explode('/', trim((string)$path, '/'));
+        // The query string is cut first, the way harvest() does it just below.
+        // No caller builds a path that needs it -- getLists() produces
+        // 'lists/'.$id with nothing after -- but the two would otherwise
+        // disagree about `lists/{id}/?x=1`, and a guard that reads a path
+        // differently from the function it sits next to is a trap for whoever
+        // changes either one.
+        $bare = (string)$path;
+        $cut = strpos($bare, '?');
+        if ($cut !== false) {
+            $bare = substr($bare, 0, $cut);
+        }
+        $parts = explode('/', trim($bare, '/'));
         if (count($parts) !== 2) {
             return;
         }
