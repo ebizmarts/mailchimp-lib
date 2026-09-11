@@ -396,6 +396,10 @@ class Mailchimp_Telemetry
             'owner_name'        => null,
             'owner_email'       => null,
             'total_subscribers' => null,
+            'list_member_count'      => null,
+            'list_unsubscribe_count' => null,
+            'list_cleaned_count'     => null,
+            'list_total_contacts'    => null,
         );
         $this->_current = $id;
     }
@@ -492,6 +496,71 @@ class Mailchimp_Telemetry
      * @param  array $result decoded body of a successful root request
      * @return void
      */
+    /**
+     * Take an audience's counts off a response the caller already asked for.
+     *
+     * Passive, exactly like observeRoot(): this never issues a request. The
+     * extension's statistics job already reads `lists/{id}` every twelve hours,
+     * so these numbers arrive on a response that was going to be fetched
+     * anyway -- no call, no quota, no latency added to anything.
+     *
+     * total_contacts is only present when the caller asked for it with
+     * include_total_contacts. Absent is the normal state and is left as null
+     * rather than guessed at, because it is the only one of these that is the
+     * billable figure and a fabricated one would be worse than none.
+     *
+     * The counts are tied to the audience the bucket has already latched. A
+     * process that reads several audiences would otherwise report one
+     * audience's identity with another's numbers, which is a wrong answer
+     * wearing a correct one's shape.
+     *
+     * @param  string $path   the request path the response came from
+     * @param  mixed  $result decoded response
+     * @return void
+     */
+    public function observeList($path, $result)
+    {
+        if (!$this->_enabled || $this->_current === null || !is_array($result)) {
+            return;
+        }
+        if (!isset($this->_buckets[$this->_current]) || !isset($result['stats'])) {
+            return;
+        }
+        if (!is_array($result['stats'])) {
+            return;
+        }
+
+        $harvested = self::harvest($path);
+        $listId = $harvested['list_id'];
+        if (!$listId) {
+            return;
+        }
+
+        $bucket = &$this->_buckets[$this->_current];
+
+        // Either this is the audience already latched, or nothing is latched
+        // yet and this one becomes it. Anything else is a different audience
+        // and its numbers do not belong on this report.
+        if ($bucket['list_id'] && $bucket['list_id'] !== $listId) {
+            return;
+        }
+        if (!$bucket['list_id']) {
+            $bucket['list_id'] = $listId;
+        }
+
+        $stats = $result['stats'];
+        foreach (array(
+            'list_member_count'      => 'member_count',
+            'list_unsubscribe_count' => 'unsubscribe_count',
+            'list_cleaned_count'     => 'cleaned_count',
+            'list_total_contacts'    => 'total_contacts',
+        ) as $field => $key) {
+            if (isset($stats[$key])) {
+                $bucket[$field] = (int)$stats[$key];
+            }
+        }
+    }
+
     public function observeRoot($result)
     {
         if (!$this->_enabled || $this->_current === null || !is_array($result)) {
@@ -691,6 +760,27 @@ class Mailchimp_Telemetry
         }
         if ($bucket['total_subscribers'] !== null) {
             $out['total_subscribers'] = $bucket['total_subscribers'];
+        }
+
+        // Per audience, and never to be added to total_subscribers above: that
+        // one is account-wide and counts differently, and on a real account the
+        // two differ by orders of magnitude rather than by a rounding error.
+        //
+        // total_contacts INCLUDES cleaned. A consumer deriving the
+        // non-subscribed residual has to subtract cleaned explicitly, or it
+        // smuggles never-billed contacts into a billable figure. And even
+        // subtracted, the residual is an UPPER BOUND on transactional rather
+        // than transactional exactly, because pending and archived land in it
+        // too and archived are not billed.
+        foreach (array(
+            'list_member_count',
+            'list_unsubscribe_count',
+            'list_cleaned_count',
+            'list_total_contacts',
+        ) as $field) {
+            if ($bucket[$field] !== null) {
+                $out[$field] = $bucket[$field];
+            }
         }
         if ($bucket['err']) {
             $out['err'] = $bucket['err'];

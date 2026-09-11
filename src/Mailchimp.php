@@ -318,6 +318,13 @@ class Mailchimp
             $this->_telemetry->observeRoot($result);
         }
 
+        // Same shape, one family over: a single-audience response carries its
+        // own counts, and observeList() ignores anything that is not one --
+        // the collection endpoint answers with `lists` and no `stats`.
+        if (Mailchimp_Telemetry::family($telemetryPath) === 'lists') {
+            $this->_telemetry->observeList($telemetryPath, $result);
+        }
+
         if ($this->helper) {
             $curlinfo = [];
             if (array_key_exists('total_time', $info)) {
