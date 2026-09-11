@@ -188,6 +188,20 @@ class Mailchimp_Telemetry
     private $_contactAllowed = null;
 
     /**
+     * Sends attempted in this process that did not arrive.
+     *
+     * Carried on the NEXT envelope rather than the failing one, because a send
+     * that does not arrive cannot report itself. That bounds what this can ever
+     * see: a process whose every send fails reports nothing, and no counter can
+     * change that. What it does make visible is the partial case -- a store
+     * where some buckets report and others do not -- which is where multi
+     * store-view installations sit, and MAX_SENDS makes routine.
+     *
+     * @var int
+     */
+    private $_sendsFailed = 0;
+
+    /**
      * @var string|null latched when the helper is set
      */
     private $_moduleVersion = null;
@@ -618,6 +632,26 @@ class Mailchimp_Telemetry
             $out['bdrop'] = $this->_dropped;
         }
 
+        if ($this->_sendsFailed > 0) {
+            $out['sfail'] = $this->_sendsFailed;
+        }
+
+        // The sampler's two constants, on the lane the sampler governs. A
+        // consumer that wants to know which windows this installation should
+        // have reported in has to model crc32(seed . window) % SAMPLE_ROOT with
+        // window = floor(time / SAMPLE_WINDOW_SEC) -- and until now it could
+        // only do that by hardcoding both numbers. Changing either here would
+        // then have made every modelled installation look like it had stopped
+        // reporting, silently and from our side. Sending them makes the
+        // coupling explicit and lets it survive a change.
+        //
+        // Not sent on the web lane: sendMode() does not sample there, so there
+        // is no cadence to predict and nothing for these to describe.
+        if ($cli) {
+            $out['sr'] = self::SAMPLE_ROOT;
+            $out['sw'] = self::SAMPLE_WINDOW_SEC;
+        }
+
         // A lean report says the installation is alive and how much work it
         // did. Everything below identifies or explains, and none of it can be
         // joined to anything without an account, which this one never saw.
@@ -844,7 +878,18 @@ class Mailchimp_Telemetry
             curl_setopt($ch, CURLOPT_TIMEOUT, 1);
         }
 
-        curl_exec($ch);
+        $body = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        // The transport result and the status, read before the handle is
+        // closed. Neither was looked at, so a refused connection, a timeout at
+        // the fence and a rejected envelope were all indistinguishable from
+        // delivery -- from inside, the only place they can be seen at all,
+        // since what never arrives is exactly what the receiver cannot record.
+        if ($body === false || $errno !== 0 || $status < 200 || $status > 299) {
+            $this->_sendsFailed++;
+        }
 
         // Guarded rather than removed: the library still declares php >=5.2.0,
         // where the handle is a resource that this call is what frees. On PHP 8
