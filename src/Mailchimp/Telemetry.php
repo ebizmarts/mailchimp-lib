@@ -197,6 +197,25 @@ class Mailchimp_Telemetry
      * where some buckets report and others do not -- which is where multi
      * store-view installations sit, and MAX_SENDS makes routine.
      *
+     * THE CONTRACT, because the obvious reading of it is wrong. This is a
+     * running total for the emitting process and nothing resets it, so one
+     * failure on the first bucket is repeated by every envelope after it:
+     * three surviving sends after one loss all carry sfail=1, and adding them
+     * up says three. **Take the maximum per process, never a sum.** Every
+     * envelope from one flush() shares essentially the same ts, which is what
+     * makes a burst identifiable.
+     *
+     * Not reset on write, deliberately. Resetting would mean a final envelope
+     * that itself fails takes its count to the grave, and carrying the count
+     * forward is the entire reason it rides the next send rather than its own.
+     *
+     * WHAT A NON-ZERO VALUE MEANS. The receiver answers 202 to everything it
+     * cannot use -- rate limited, oversized, unparseable, unknown schema --
+     * precisely so a beacon never costs a merchant a retry. So a rejection
+     * cannot reach this counter, and what remains is transport failure and
+     * whatever a proxy, WAF or intermediary injects. A non-zero value is not
+     * "the receiver turned us away"; it is a send that never got there.
+     *
      * @var int
      */
     private $_sendsFailed = 0;
