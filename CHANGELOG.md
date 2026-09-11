@@ -1,5 +1,55 @@
 # Change Log
 
+## [3.0.50](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.50) (2026-09-11)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.49...3.0.50)
+
+**Implemented enhancements:**
+
+- Take an audience's counts off a response the caller already asked for [\#88](https://github.com/ebizmarts/mailchimp-lib/pull/88)
+
+  `observeList()` mirrors `observeRoot()`: passive, on a response the caller
+  already has. The extension's statistics job reads `lists/{id}` every twelve
+  hours, so nothing new is requested -- no call, no quota, no latency. Measured
+  on a running install: the same eight calls with the change as without it, and
+  nineteen more bytes downloaded.
+
+  `getLists()` gains `include_total_contacts`, appended last so every existing
+  positional caller is unaffected and off by default. `total_contacts` is the
+  billable figure and it is the one the payload cannot yield by arithmetic:
+  `member_count + unsubscribe_count` omits non-subscribed contacts, which on an
+  ecommerce account is most of the audience. Absent is left as null rather than
+  derived, because a fabricated total that nearly matches is worse than one that
+  is missing.
+
+  `total_contacts` **includes cleaned**, measured on an audience with 631 of
+  them. A consumer deriving the non-subscribed residual has to subtract cleaned
+  explicitly, and even then the residual is an upper bound rather than an exact
+  figure, since pending and archived land in it and archived are never billed.
+
+  Only `lists/{id}` is observed, never a sub-resource: a member object carries
+  its own `stats`, so a member fetch reached this and wrote nothing by luck
+  rather than by design.
+
+- Notice a send that did not arrive, and say which windows were sampled [\#87](https://github.com/ebizmarts/mailchimp-lib/pull/87)
+
+  The reporting path discarded `curl_exec()`'s return and never read the status,
+  so a refused connection, a timeout at the fence and a rejected envelope were
+  all indistinguishable from delivery -- from inside the library, which is the
+  only place they can be seen at all. A send that did not arrive now increments
+  a counter carried on the **next** envelope as `sfail`.
+
+  It is a running total for the emitting process and nothing resets it: take the
+  maximum per process, never a sum. A send cannot report its own failure, so a
+  process whose every send fails still reports nothing; what becomes visible is
+  the partial case.
+
+  The envelope also carries the sampler's two constants on the lane the sampler
+  governs, as `sr` and `sw`. A consumer predicting which windows an installation
+  should have reported in could previously only do so by hardcoding them, which
+  meant changing either one here would have made every modelled installation
+  look like it had stopped reporting.
+
 ## [3.0.49](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.49) (2026-09-10)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.48...3.0.49)
