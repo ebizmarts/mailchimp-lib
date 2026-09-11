@@ -530,6 +530,23 @@ class Mailchimp_Telemetry
             return;
         }
 
+        // lists/{id} and nothing below it. Raised in review, and the reason is
+        // that everything else here is guarded on what we asked for while this
+        // was guarded on what came back: family() answers `lists` for every
+        // path under lists/, and harvest() yields an id for any of them, so
+        // lists/{id}/members/{hash} reached this too -- on the subscriber sync,
+        // which is a hot path. It wrote nothing only because a member's own
+        // stats object carries avg_open_rate and avg_click_rate rather than any
+        // of the four keys read below. That is a property of Mailchimp's
+        // responses, not of anything we control, and the day a member's stats
+        // gained a key named member_count this would have written one
+        // subscriber's numbers into the audience fields, silently and with the
+        // right-looking shape.
+        $parts = explode('/', trim((string)$path, '/'));
+        if (count($parts) !== 2) {
+            return;
+        }
+
         $harvested = self::harvest($path);
         $listId = $harvested['list_id'];
         if (!$listId) {
