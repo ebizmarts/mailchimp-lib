@@ -396,7 +396,7 @@ class Mailchimp_Telemetry
             'owner_name'        => null,
             'owner_email'       => null,
             'total_subscribers' => null,
-            'plan_type'         => null,
+            'pricing_plan_type'         => null,
             'list_member_count'      => null,
             'list_unsubscribe_count' => null,
             'list_cleaned_count'     => null,
@@ -627,8 +627,8 @@ class Mailchimp_Telemetry
         // be worse than not having it. Left as the string the API gave rather
         // than mapped to an enum, so a value we have not seen arrives intact
         // instead of collapsing into whatever our default happened to be.
-        if (!$bucket['plan_type'] && isset($result['pricing_plan_type'])) {
-            $bucket['plan_type'] = substr((string)$result['pricing_plan_type'], 0, 32);
+        if (!$bucket['pricing_plan_type'] && isset($result['pricing_plan_type'])) {
+            $bucket['pricing_plan_type'] = substr((string)$result['pricing_plan_type'], 0, 32);
         }
     }
 
@@ -805,8 +805,8 @@ class Mailchimp_Telemetry
         if ($bucket['total_subscribers'] !== null) {
             $out['total_subscribers'] = $bucket['total_subscribers'];
         }
-        if ($bucket['plan_type'] !== null) {
-            $out['plan_type'] = $bucket['plan_type'];
+        if ($bucket['pricing_plan_type'] !== null) {
+            $out['pricing_plan_type'] = $bucket['pricing_plan_type'];
         }
 
         // Per audience, and never to be added to total_subscribers above: that
