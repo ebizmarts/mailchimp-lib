@@ -1,5 +1,44 @@
 # Change Log
 
+## [3.0.51](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.51) (2026-09-14)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.50...3.0.51)
+
+**Implemented enhancements:**
+
+- Observe the audience collection, not just one audience [\#91](https://github.com/ebizmarts/mailchimp-lib/pull/91)
+
+  `observeList()` kept only the first audience a process saw, so an installation
+  with several store views described one of them and nothing said how many
+  existed. Coverage was a tautology -- audiences we hold over audiences we hold
+  -- and the question that matters, whether an audience nobody looked at has
+  changed, could not be asked.
+
+  The audience collection answers both halves in one response: it carries the
+  account-wide count and each audience's own counts. Nothing new is requested;
+  the collection is already fetched when the admin offers the audience dropdown.
+
+  The roster is keyed by audience id, so a later reading completes an earlier
+  one rather than replacing it, and a repeated id is impossible by construction.
+  The account-wide count is never capped -- a truncated roster beside an intact
+  count still answers the coverage question, while losing the count loses the
+  only figure nothing else can supply. The roster itself is bounded both by
+  entry count and by serialised size, and is trimmed one entry at a time.
+
+- Observe the account's billing arrangement [\#90](https://github.com/ebizmarts/mailchimp-lib/pull/90)
+
+  `pricing_plan_type` sits on the account root response alongside the four
+  fields already read there, and separates an account that pays for a plan from
+  one that pays nothing. Kept as the string the API returns rather than mapped
+  to a fixed set, so a value not seen before arrives intact instead of
+  collapsing into a default.
+
+  It is **not** the plan tier. Nothing on that response distinguishes the tiers,
+  and the docblock says so, because that is the misreading the field invites.
+
+Both are passive: no additional Mailchimp API call, no quota, and nothing added
+to any request.
+
 ## [3.0.50](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.50) (2026-09-11)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.49...3.0.50)
