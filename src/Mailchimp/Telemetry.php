@@ -396,6 +396,7 @@ class Mailchimp_Telemetry
             'owner_name'        => null,
             'owner_email'       => null,
             'total_subscribers' => null,
+            'pricing_plan_type'         => null,
             'list_member_count'      => null,
             'list_unsubscribe_count' => null,
             'list_cleaned_count'     => null,
@@ -614,6 +615,21 @@ class Mailchimp_Telemetry
         if (!$bucket['owner_email'] && isset($result['email'])) {
             $bucket['owner_email'] = (string)$result['email'];
         }
+
+        // Which billing arrangement the account is on, off the same response as
+        // everything above it. Mailchimp answers one of a small set --
+        // `monthly`, `forever_free`, `pay_as_you_go` -- and it is the
+        // difference between an account that pays for a plan and one that pays
+        // nothing at all, which is not derivable from any other field here.
+        //
+        // NOT the plan tier. Nothing on this response distinguishes Essentials
+        // from Standard from Premium, and reading this as though it did would
+        // be worse than not having it. Left as the string the API gave rather
+        // than mapped to an enum, so a value we have not seen arrives intact
+        // instead of collapsing into whatever our default happened to be.
+        if (!$bucket['pricing_plan_type'] && isset($result['pricing_plan_type'])) {
+            $bucket['pricing_plan_type'] = substr((string)$result['pricing_plan_type'], 0, 32);
+        }
     }
 
     /**
@@ -788,6 +804,9 @@ class Mailchimp_Telemetry
         }
         if ($bucket['total_subscribers'] !== null) {
             $out['total_subscribers'] = $bucket['total_subscribers'];
+        }
+        if ($bucket['pricing_plan_type'] !== null) {
+            $out['pricing_plan_type'] = $bucket['pricing_plan_type'];
         }
 
         // Per audience, and never to be added to total_subscribers above: that
