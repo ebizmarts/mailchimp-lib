@@ -120,13 +120,25 @@ class Mailchimp_Telemetry
      * Audiences carried per report.
      *
      * The count of audiences an account holds is reported separately and is
-     * never capped, so the denominator survives even when the list does not.
-     * This bounds only how many are described individually, because an account
-     * with hundreds would otherwise push the report past MAX_BYTES and be
-     * dropped whole -- losing the denominator too, which is the one figure that
-     * cannot be recovered from anywhere else.
+     * never capped, so the denominator survives even when the roster does not.
+     * This bounds only how many are described individually.
+     *
+     * Twelve rather than a larger number because an unpaged `GET /lists`
+     * answers ten, so twelve carries a default observation whole and leaves
+     * headroom, and because the receiver drops an oversized roster rather than
+     * truncating it -- which would cost the denominator too, and that is the
+     * one figure nothing else can supply.
      */
-    const MAX_AUDIENCES = 50;
+    const MAX_AUDIENCES = 12;
+
+    /**
+     * Bytes the serialised roster may occupy.
+     *
+     * Over this the receiver drops the roster whole rather than storing it
+     * truncated, so the cap above is what keeps it inside -- and this is the
+     * backstop for an account whose ids are longer than any seen.
+     */
+    const MAX_AUDIENCES_BYTES = 4096;
 
     /**
      * Milliseconds the whole reporting step may spend, by context.
@@ -414,7 +426,6 @@ class Mailchimp_Telemetry
             'list_total_contacts'    => null,
             'audience_count'         => null,
             'audiences'              => array(),
-            'audiences_seen'         => 0,
         );
         $this->_current = $id;
     }
@@ -674,15 +685,54 @@ class Mailchimp_Telemetry
      * response carrying total_contacts able to complete an entry the collection
      * left without it.
      *
-     * audiences_seen counts every audience offered, including those past the
-     * cap, so a consumer can tell a complete list from a truncated one without
-     * a separate flag.
+     * Nothing counts what was offered: the account-wide count is reported
+     * separately and uncapped, so comparing it with the roster's size already
+     * says whether anything was left out.
      *
      * @param  array  $bucket by reference
      * @param  string $listId
      * @param  array  $stats
      * @return void
      */
+    /**
+     * The roster as it goes on the wire: short keys, and inside the byte bound.
+     *
+     * Trimming here rather than while recording keeps the decision in one
+     * place, and keeps the bound about what is sent rather than about what was
+     * observed -- a roster that fits is unaffected by how it was assembled.
+     *
+     * @param  array $audiences
+     * @return array
+     */
+    private function roster($audiences)
+    {
+        $out = array();
+        foreach ($audiences as $listId => $entry) {
+            $row = array();
+            foreach (array(
+                'mem' => 'member_count',
+                'uns' => 'unsubscribe_count',
+                'cln' => 'cleaned_count',
+                'tot' => 'total_contacts',
+            ) as $short => $long) {
+                if (isset($entry[$long])) {
+                    $row[$short] = $entry[$long];
+                }
+            }
+            $out[$listId] = $row;
+        }
+
+        // Dropped one at a time from the end rather than all at once: an
+        // oversized roster is refused whole by the receiver, so carrying fewer
+        // audiences is strictly better than carrying none, and the count beside
+        // it still says how many were left out.
+        while ($out && strlen(json_encode($out)) > self::MAX_AUDIENCES_BYTES) {
+            array_pop($out);
+        }
+
+        return $out;
+    }
+
     private function recordAudience(&$bucket, $listId, $stats)
     {
         if (!$listId) {
@@ -691,7 +741,6 @@ class Mailchimp_Telemetry
 
         $known = isset($bucket['audiences'][$listId]);
         if (!$known) {
-            $bucket['audiences_seen']++;
             if (count($bucket['audiences']) >= self::MAX_AUDIENCES) {
                 return;
             }
@@ -932,20 +981,24 @@ class Mailchimp_Telemetry
             }
         }
 
-        // How many audiences the account holds, against how many this report
-        // describes. Without the first, coverage is a tautology -- audiences we
-        // hold over audiences we hold -- and the question that matters, whether
-        // an audience we never saw has changed, cannot be asked at all.
+        // `lac` is how many audiences the account holds; `la` is the roster of
+        // the ones this report describes. Without the first, coverage is a
+        // tautology -- audiences we hold over audiences we hold -- and the
+        // question that matters, whether an audience we never saw has changed,
+        // cannot be asked at all.
         //
-        // audiences_reported is deliberately the number OFFERED rather than the
-        // number carried, so a consumer comparing it with the array's length
-        // sees truncation without a flag to forget to set.
+        // No separate truncation flag: `lac` is the offered count and the
+        // roster's size is the carried one, so the comparison already says it
+        // and there is nothing to forget to set.
+        //
+        // A map rather than a list, keyed by audience id. Object keys are
+        // unique, so a repeated id is impossible by construction instead of
+        // resolved by a rule nobody reads.
         if ($bucket['audience_count'] !== null) {
-            $out['audience_count'] = $bucket['audience_count'];
+            $out['lac'] = $bucket['audience_count'];
         }
         if ($bucket['audiences']) {
-            $out['audiences_json'] = array_values($bucket['audiences']);
-            $out['audiences_reported'] = $bucket['audiences_seen'];
+            $out['la'] = $this->roster($bucket['audiences']);
         }
         if ($bucket['err']) {
             $out['err'] = $bucket['err'];
