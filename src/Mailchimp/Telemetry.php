@@ -117,6 +117,30 @@ class Mailchimp_Telemetry
     const SAMPLE_WINDOW_SEC = 300;
 
     /**
+     * Audiences carried per report.
+     *
+     * The count of audiences an account holds is reported separately and is
+     * never capped, so the denominator survives even when the roster does not.
+     * This bounds only how many are described individually.
+     *
+     * Twelve rather than a larger number because an unpaged `GET /lists`
+     * answers ten, so twelve carries a default observation whole and leaves
+     * headroom, and because the receiver drops an oversized roster rather than
+     * truncating it -- which would cost the denominator too, and that is the
+     * one figure nothing else can supply.
+     */
+    const MAX_AUDIENCES = 12;
+
+    /**
+     * Bytes the serialised roster may occupy.
+     *
+     * Over this the receiver drops the roster whole rather than storing it
+     * truncated, so the cap above is what keeps it inside -- and this is the
+     * backstop for an account whose ids are longer than any seen.
+     */
+    const MAX_AUDIENCES_BYTES = 4096;
+
+    /**
      * Milliseconds the whole reporting step may spend, by context.
      *
      * Must stay at or above the matching TOTAL below, or it — not the per-request
@@ -401,6 +425,8 @@ class Mailchimp_Telemetry
             'list_unsubscribe_count' => null,
             'list_cleaned_count'     => null,
             'list_total_contacts'    => null,
+            'audience_count'         => null,
+            'audiences'              => array(),
         );
         $this->_current = $id;
     }
@@ -567,9 +593,11 @@ class Mailchimp_Telemetry
 
         $bucket = &$this->_buckets[$this->_current];
 
-        // Either this is the audience already latched, or nothing is latched
-        // yet and this one becomes it. Anything else is a different audience
-        // and its numbers do not belong on this report.
+        $this->recordAudience($bucket, $listId, $result['stats']);
+
+        // The flat fields describe the first audience the process saw, and are
+        // kept alongside the map rather than replaced by it: a consumer reading
+        // them predates the map and must not lose its value to this change.
         if ($bucket['list_id'] && $bucket['list_id'] !== $listId) {
             return;
         }
@@ -586,6 +614,148 @@ class Mailchimp_Telemetry
         ) as $field => $key) {
             if (isset($stats[$key])) {
                 $bucket[$field] = (int)$stats[$key];
+            }
+        }
+    }
+
+    /**
+     * Take the audience collection off a `lists` response the caller already
+     * asked for.
+     *
+     * This is where the denominator comes from. Observing one audience at a
+     * time can only ever say how many we hold, never how many exist, so
+     * coverage was unanswerable -- and that is what made a large contact fall
+     * on a real account undiagnosable: we could prove no audience we knew about
+     * had been deleted, and say nothing about the rest of the account.
+     *
+     * The collection carries each audience's stats as well as the count, so one
+     * response answers both. Nothing here is requested: the collection is
+     * fetched by the admin when it offers the audience dropdown.
+     *
+     * @param  string $path
+     * @param  mixed  $result
+     * @return void
+     */
+    public function observeListCollection($path, $result)
+    {
+        if (!$this->_enabled || $this->_current === null || !is_array($result)) {
+            return;
+        }
+        if (!isset($this->_buckets[$this->_current]) || !isset($result['lists'])) {
+            return;
+        }
+        if (!is_array($result['lists'])) {
+            return;
+        }
+
+        $bare = (string)$path;
+        $cut = strpos($bare, '?');
+        if ($cut !== false) {
+            $bare = substr($bare, 0, $cut);
+        }
+        if (trim($bare, '/') !== 'lists') {
+            return;
+        }
+
+        $bucket = &$this->_buckets[$this->_current];
+
+        // The count is never capped and never overwritten downwards by a page:
+        // it is the one figure nothing else can supply, and a truncated array
+        // beside an intact count still answers the coverage question.
+        if (isset($result['total_items'])) {
+            $bucket['audience_count'] = (int)$result['total_items'];
+        }
+
+        foreach ($result['lists'] as $list) {
+            if (!is_array($list) || !isset($list['id']) || !isset($list['stats'])) {
+                continue;
+            }
+            if (!is_array($list['stats'])) {
+                continue;
+            }
+            $this->recordAudience($bucket, (string)$list['id'], $list['stats']);
+        }
+    }
+
+    /**
+     * Record one audience's counts in the per-audience map.
+     *
+     * Keyed by audience id, so a process that reads several reports each of
+     * them rather than the first one it happened to see. Later readings of the
+     * same audience replace earlier ones, which is what makes a single-audience
+     * response carrying total_contacts able to complete an entry the collection
+     * left without it.
+     *
+     * Nothing counts what was offered: the account-wide count is reported
+     * separately and uncapped, so comparing it with the roster's size already
+     * says whether anything was left out.
+     *
+     * @param  array  $bucket by reference
+     * @param  string $listId
+     * @param  array  $stats
+     * @return void
+     */
+    /**
+     * The roster as it goes on the wire: short keys, and inside the byte bound.
+     *
+     * Trimming here rather than while recording keeps the decision in one
+     * place, and keeps the bound about what is sent rather than about what was
+     * observed -- a roster that fits is unaffected by how it was assembled.
+     *
+     * @param  array $audiences
+     * @return array
+     */
+    private function roster($audiences)
+    {
+        $out = array();
+        foreach ($audiences as $listId => $entry) {
+            $row = array();
+            foreach (array(
+                'mem' => 'member_count',
+                'uns' => 'unsubscribe_count',
+                'cln' => 'cleaned_count',
+                'tot' => 'total_contacts',
+            ) as $short => $long) {
+                if (isset($entry[$long])) {
+                    $row[$short] = $entry[$long];
+                }
+            }
+            $out[$listId] = $row;
+        }
+
+        // Dropped one at a time from the end rather than all at once: an
+        // oversized roster is refused whole by the receiver, so carrying fewer
+        // audiences is strictly better than carrying none, and the count beside
+        // it still says how many were left out.
+        while ($out && strlen(json_encode($out)) > self::MAX_AUDIENCES_BYTES) {
+            array_pop($out);
+        }
+
+        return $out;
+    }
+
+    private function recordAudience(&$bucket, $listId, $stats)
+    {
+        if (!$listId) {
+            return;
+        }
+
+        $known = isset($bucket['audiences'][$listId]);
+        if (!$known) {
+            if (count($bucket['audiences']) >= self::MAX_AUDIENCES) {
+                return;
+            }
+            $bucket['audiences'][$listId] = array('id' => substr($listId, 0, 32));
+        }
+
+        foreach (array(
+            'member_count',
+            'unsubscribe_count',
+            'cleaned_count',
+            'total_contacts',
+        ) as $key) {
+            if (isset($stats[$key])) {
+                $bucket['audiences'][$listId][$key] = (int)$stats[$key];
             }
         }
     }
@@ -828,6 +998,26 @@ class Mailchimp_Telemetry
             if ($bucket[$field] !== null) {
                 $out[$field] = $bucket[$field];
             }
+        }
+
+        // `lac` is how many audiences the account holds; `la` is the roster of
+        // the ones this report describes. Without the first, coverage is a
+        // tautology -- audiences we hold over audiences we hold -- and the
+        // question that matters, whether an audience we never saw has changed,
+        // cannot be asked at all.
+        //
+        // No separate truncation flag: `lac` is the offered count and the
+        // roster's size is the carried one, so the comparison already says it
+        // and there is nothing to forget to set.
+        //
+        // A map rather than a list, keyed by audience id. Object keys are
+        // unique, so a repeated id is impossible by construction instead of
+        // resolved by a rule nobody reads.
+        if ($bucket['audience_count'] !== null) {
+            $out['lac'] = $bucket['audience_count'];
+        }
+        if ($bucket['audiences']) {
+            $out['la'] = $this->roster($bucket['audiences']);
         }
         if ($bucket['err']) {
             $out['err'] = $bucket['err'];

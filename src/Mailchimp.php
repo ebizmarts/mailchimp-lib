@@ -323,6 +323,7 @@ class Mailchimp
         // the collection endpoint answers with `lists` and no `stats`.
         if (Mailchimp_Telemetry::family($telemetryPath) === 'lists') {
             $this->_telemetry->observeList($telemetryPath, $result);
+            $this->_telemetry->observeListCollection($telemetryPath, $result);
         }
 
         if ($this->helper) {
