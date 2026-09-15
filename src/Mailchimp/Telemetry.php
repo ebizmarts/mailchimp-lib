@@ -444,6 +444,20 @@ class Mailchimp_Telemetry
      * hostile byte would therefore have cost the entire report -- every count,
      * every timing, for every bucket -- and not merely this field.
      *
+     * Last, a token has to carry at least one character that is not a
+     * separator. `getFullActionName()` composes route, controller and action
+     * with underscores between them, so a request that was never routed
+     * composes the separators alone -- `__`. That passes the charset test, and
+     * has to: underscore is in the set because it *is* the separator. What
+     * would arrive is a token that names nothing, byte-identical on every
+     * installation that produces one, and indistinguishable from a route name
+     * to anything reading it later.
+     *
+     * The rule is "something that is not a separator", not "not two
+     * underscores". `mailchimp__` is **kept**: it carries a real route id, so
+     * it says the route resolved and the controller and action did not, which
+     * is both true and worth reporting.
+     *
      * @param  mixed $value
      * @return string|null
      */
@@ -456,7 +470,11 @@ class Mailchimp_Telemetry
             return null;
         }
 
-        return preg_match('/^[A-Za-z0-9_]+\z/', $value) === 1 ? $value : null;
+        if (preg_match('/^[A-Za-z0-9_]+\z/', $value) !== 1) {
+            return null;
+        }
+
+        return preg_match('/[A-Za-z0-9]/', $value) === 1 ? $value : null;
     }
 
     /**

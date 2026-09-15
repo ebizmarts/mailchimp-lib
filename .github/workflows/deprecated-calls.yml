@@ -1,4 +1,4 @@
-name: Deprecated calls
+name: Source gates
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   gate:
-    name: No unguarded deprecated calls
+    name: Gates over src
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,3 +28,11 @@ jobs:
 
       - name: Scan src for unguarded deprecated calls
         run: php tools/no-deprecated-calls.php src
+
+      # The rule that decides what an area or an action may carry. Three of its
+      # cases sit one byte from a rule that looks identical and is wrong, and
+      # none of the three fails loudly in production: the token stops arriving,
+      # the beacon still answers 202, and nothing records that anything was
+      # dropped.
+      - name: Test the surface token rule
+        run: php tools/tests/test-surface-token.php
