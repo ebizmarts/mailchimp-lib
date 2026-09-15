@@ -64,11 +64,10 @@ check('a route with the rest unrouted',  token('mailchimp__') === 'mailchimp__')
 
 echo "\nrejected whole, never repaired\n";
 check('over the cap by one byte',        token(str_repeat('a', 129)) === null);
-// PHP's `$` also matches immediately before a final newline; the receiver's
-// equivalent is JavaScript, where it does not. Ported literally this rule
-// would accept exactly one byte the receiver refuses, and the token would
-// vanish with nothing recorded at either end. If someone "normalises" \z back
-// to $, this is the check that says so.
+// PHP's `$` also matches immediately before a final newline, so an otherwise
+// identical rule anchored at `$` accepts a token no dispatch ever produced --
+// differing from one a dispatch did by a byte that does not print. If someone
+// "normalises" \z back to $, this is the check that says so.
 check('a trailing newline',              token("checkout_index\n") === null);
 check('an interior NUL',                 token("checkout_index\x00_index") === null);
 // json_encode() returns false on malformed UTF-8 and flush() drops a body that
