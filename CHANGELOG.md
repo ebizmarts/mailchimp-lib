@@ -1,5 +1,38 @@
 # Change Log
 
+## [3.0.52](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.52) (2026-09-15)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.51...3.0.52)
+
+**Implemented enhancements:**
+
+- Let the host name the surface it is serving [\#93](https://github.com/ebizmarts/mailchimp-lib/pull/93)
+
+  Nothing on the wire between this library and Mailchimp says whether the process
+  behind a call is a storefront render, an admin click or a cron, and `PHP_SAPI`
+  cannot be made to say it: Magento's own cron entry point refuses to run under the
+  CLI SAPI, so an installation running cron over HTTP reports as web today.
+
+  `setSurface($area, $action)` takes the two tokens together and keeps them as
+  instance state, beside the user agent rather than on a bucket -- a bucket exists
+  only once an API key has been seen, and the dispatch happens whether or not one
+  ever is.
+
+  The action can be attacker-controlled, so the value is bounded and rejected whole
+  when it does not fit, never repaired. The pattern is ASCII-only, which also keeps
+  a malformed byte from costing the entire report: `json_encode()` returns false on
+  malformed UTF-8 and a body that is not a string is dropped. It ends at `\z`
+  rather than `$`, because PHP's `$` also matches immediately before a final
+  newline. A token has to carry at least one character that is not a separator, so
+  an unrouted request -- which composes the bare delimiters -- names nothing and is
+  refused.
+
+- Keep construction detail out of what the package ships [\#94](https://github.com/ebizmarts/mailchimp-lib/pull/94)
+
+  Comment only, no behaviour. Docblocks that explained a rule by describing how the
+  far end is built now explain it on this library's own terms, which is where every
+  one of those rules actually stands.
+
 ## [3.0.51](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.51) (2026-09-14)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.50...3.0.51)
