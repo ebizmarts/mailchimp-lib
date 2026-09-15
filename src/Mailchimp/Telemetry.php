@@ -70,9 +70,9 @@ class Mailchimp_Telemetry
      * Stock Magento's longest route id is 32 characters and its longest
      * controller/action pair is 47, so a real action name runs to about 81.
      * The number is not chosen to fit those, though -- it is chosen to bound
-     * what an untrusted value can cost, and 128 is what the receiver already
-     * enforces. Matching it means a value this accepts is a value that lands,
-     * rather than one we spend bytes on and the receiver then drops.
+     * what an untrusted value can cost. 128 is the ceiling a value has to fit
+     * for it to land, so anything above it is bytes spent on a token that does
+     * not arrive. Anyone changing it should move the bound, not the fit.
      */
     const MAX_SURFACE_BYTES = 128;
 
@@ -255,12 +255,12 @@ class Mailchimp_Telemetry
      * that itself fails takes its count to the grave, and carrying the count
      * forward is the entire reason it rides the next send rather than its own.
      *
-     * WHAT A NON-ZERO VALUE MEANS. The receiver answers 202 to everything it
-     * cannot use -- rate limited, oversized, unparseable, unknown schema --
-     * precisely so a beacon never costs a merchant a retry. So a rejection
-     * cannot reach this counter, and what remains is transport failure and
-     * whatever a proxy, WAF or intermediary injects. A non-zero value is not
-     * "the receiver turned us away"; it is a send that never got there.
+     * WHAT A NON-ZERO VALUE MEANS. A 2xx says the send arrived, not that the
+     * report was used: the status is chosen so that a beacon never costs a
+     * merchant a retry, whatever became of the envelope. So a report that was
+     * declined cannot reach this counter, and what remains is transport
+     * failure and whatever a proxy, WAF or intermediary injects. A non-zero
+     * value is not "we were turned away"; it is a send that never got there.
      *
      * @var int
      */
@@ -433,10 +433,9 @@ class Mailchimp_Telemetry
      *
      * `\z` rather than `$`: PHP's `$` also matches immediately before a final
      * newline, so `/^[A-Za-z0-9_]+$/` accepts "checkout_index\n" -- verified,
-     * it returns 1. The receiver's equivalent is JavaScript, where `$` has no
-     * such exception and the same value is refused. A token accepted here and
-     * refused there would disappear with nothing recorded anywhere, so the
-     * looser of the two rules is the one worth not having.
+     * it returns 1. `\z` is the anchor that means what it looks like. A rule
+     * anchored at `$` accepts a token no dispatch ever produced, differing
+     * from one that a dispatch did by a byte that does not print.
      *
      * The pattern is ASCII-only, which settles a second problem as a
      * consequence rather than as a separate guard: json_encode() returns false
