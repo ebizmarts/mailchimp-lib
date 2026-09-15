@@ -397,7 +397,7 @@ class Mailchimp_Telemetry
      * Magento's own page-cache block renderer writes all three from an
      * unauthenticated query parameter for the duration of a block render. The
      * pattern below therefore bounds what may be carried, and the receiver
-     * validates independently, because it is reachable without us. Neither can
+     * validates again rather than trusting that this happened. Neither can
      * tell a forged but well-formed action name from a real one: what both
      * bound is the shape, so the worst case is an action attributed to the
      * wrong surface, not an action that carries anything into a consumer.
