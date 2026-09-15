@@ -65,6 +65,18 @@ class Mailchimp_Telemetry
     const MAX_BYTES = 8192;
 
     /**
+     * The longest area or action this will carry.
+     *
+     * Stock Magento's longest route id is 32 characters and its longest
+     * controller/action pair is 47, so a real action name runs to about 81.
+     * The number is not chosen to fit those, though -- it is chosen to bound
+     * what an untrusted value can cost, and 128 is what the receiver already
+     * enforces. Matching it means a value this accepts is a value that lands,
+     * rather than one we spend bytes on and the receiver then drops.
+     */
+    const MAX_SURFACE_BYTES = 128;
+
+    /**
      * Buckets held per process. Beyond this the overflow is counted and
      * discarded rather than grown without bound.
      */
@@ -190,6 +202,16 @@ class Mailchimp_Telemetry
      * @var int buckets discarded after MAX_BUCKETS
      */
     private $_dropped = 0;
+
+    /**
+     * @var string|null the application area this process dispatched in
+     */
+    private $_area = null;
+
+    /**
+     * @var string|null the action this process dispatched
+     */
+    private $_action = null;
 
     /**
      * @var bool
@@ -353,6 +375,88 @@ class Mailchimp_Telemetry
                 $this->_buckets[$this->_current]['mc_store_id'] = (string)$mailchimpStoreId;
             }
         }
+    }
+
+    /**
+     * The surface this process is serving: the application area and the action
+     * it dispatched.
+     *
+     * Instance-scoped, like the user agent and unlike everything that lives on
+     * a bucket. A bucket only exists once an API key has been seen, and
+     * `$_current` is null for a store view with no key configured and for
+     * every bucket past MAX_BUCKETS -- but the dispatch happened regardless,
+     * and those are the processes whose surface we would most want named. A
+     * process serves one surface; a bucket is an account it talked to.
+     *
+     * First non-empty wins, per token and independently, so a valid area
+     * survives an action that does not pass and a second reading cannot
+     * overwrite the first.
+     *
+     * **The action can be attacker-controlled.** `getFullActionName()` is
+     * built from the route, controller and action of the current request, and
+     * Magento's own page-cache block renderer writes all three from an
+     * unauthenticated query parameter for the duration of a block render. The
+     * pattern below therefore bounds what may be carried, and the receiver
+     * validates independently, because it is reachable without us. Neither can
+     * tell a forged but well-formed action name from a real one: what both
+     * bound is the shape, so the worst case is an action attributed to the
+     * wrong surface, not an action that carries anything into a consumer.
+     *
+     * @param  string $area   application area, e.g. frontend or adminhtml
+     * @param  string $action full action name, e.g. checkout_index_index
+     * @return void
+     */
+    public function setSurface($area, $action)
+    {
+        $area = self::surfaceToken($area);
+        if ($area !== null && $this->_area === null) {
+            $this->_area = $area;
+        }
+
+        $action = self::surfaceToken($action);
+        if ($action !== null && $this->_action === null) {
+            $this->_action = $action;
+        }
+    }
+
+    /**
+     * An area or action as it may be carried, or null to carry nothing.
+     *
+     * Rejected whole, never repaired. Stripping the characters that fail out
+     * of a value that failed leaves a value nobody sent: `sales_order\x00view`
+     * cleaned is `sales_orderview`, which is not what arrived and may well be
+     * a route that exists. Absent says what happened; cleaned does not.
+     *
+     * Length is measured on the raw bytes and before the charset test, so the
+     * value tested is the value given -- there is no intermediate form whose
+     * length could differ from what arrived.
+     *
+     * `\z` rather than `$`: PHP's `$` also matches immediately before a final
+     * newline, so `/^[A-Za-z0-9_]+$/` accepts "checkout_index\n" -- verified,
+     * it returns 1. The receiver's equivalent is JavaScript, where `$` has no
+     * such exception and the same value is refused. A token accepted here and
+     * refused there would disappear with nothing recorded anywhere, so the
+     * looser of the two rules is the one worth not having.
+     *
+     * The pattern is ASCII-only, which settles a second problem as a
+     * consequence rather than as a separate guard: json_encode() returns false
+     * on malformed UTF-8, and flush() drops a body that is not a string. One
+     * hostile byte would therefore have cost the entire report -- every count,
+     * every timing, for every bucket -- and not merely this field.
+     *
+     * @param  mixed $value
+     * @return string|null
+     */
+    private static function surfaceToken($value)
+    {
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+        if (strlen($value) > self::MAX_SURFACE_BYTES) {
+            return null;
+        }
+
+        return preg_match('/^[A-Za-z0-9_]+\z/', $value) === 1 ? $value : null;
     }
 
     /**
@@ -952,6 +1056,24 @@ class Mailchimp_Telemetry
         if ($cli) {
             $out['sr'] = self::SAMPLE_ROOT;
             $out['sw'] = self::SAMPLE_WINDOW_SEC;
+        }
+
+        // Above the lean cut, with the other facts about the reporting process
+        // rather than about the account it reached. A lean report is one this
+        // process sends having never seen the account root, and what that
+        // process was doing is the one thing such a report can still say.
+        //
+        // It costs the lean lane nothing to be wrong about this, either:
+        // sendMode() never returns lean off the CLI lane, and both reasons
+        // this field exists -- separating an HTTP cron from real web traffic,
+        // and separating the storefront campaign check from the admin one --
+        // are web.
+        if ($this->_area !== null) {
+            $out['area'] = $this->_area;
+        }
+
+        if ($this->_action !== null) {
+            $out['action'] = $this->_action;
         }
 
         // A lean report says the installation is alive and how much work it

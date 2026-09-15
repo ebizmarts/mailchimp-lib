@@ -244,6 +244,25 @@ class Mailchimp
         $this->_telemetry->setMailchimpStoreId($mailchimpStoreId);
     }
 
+    /**
+     * The surface the host is serving while it talks to us.
+     *
+     * Passed through, like the Mailchimp store id and for the same reason: the
+     * telemetry cannot observe it. Nothing on the wire between this library
+     * and Mailchimp says whether the process behind a call is a storefront
+     * render, an admin click or a cron, and PHP_SAPI cannot be made to say it
+     * either -- Magento's own cron entry point refuses to run under the CLI
+     * SAPI, so an installation running cron over HTTP reports as web today.
+     *
+     * @param  string $area
+     * @param  string $action
+     * @return void
+     */
+    public function setSurface($area, $action)
+    {
+        $this->_telemetry->setSurface($area, $action);
+    }
+
     public function setUserAgent($userAgent)
     {
         if (!$this->_ch) {
