@@ -36,3 +36,12 @@ jobs:
       # dropped.
       - name: Test the surface token rule
         run: php tools/tests/test-surface-token.php
+
+      # The library calls back into the host's helper, and composer cannot hold
+      # that pairing: the module requires a minimum library version, a library
+      # cannot require a minimum module version, and the module's constraint is
+      # a floor with no ceiling. An unguarded call is therefore a fatal on
+      # every installation whose module predates the method -- on the answer
+      # and on the failure alike.
+      - name: Test that the host is notified only when it can be
+        run: php tools/tests/test-notification-guard.php
