@@ -84,11 +84,25 @@ class Mailchimp_Error extends Exception
         if ($this->storeURL) {
             $errors['storeURL'] = $this->storeURL;
         }
-        if ($this->helper) {
+        if ($this->helper && method_exists($this->helper, 'getGmtDate')) {
             $errors['time'] = $this->helper->getGmtDate();
         }
         $errors['error'] = $error;
-        if ($this->helper) {
+        // Guarded on the method, not only on the helper. Composer cannot
+        // express this pairing: the module requires a minimum library version,
+        // a library cannot require a minimum module version, and the module's
+        // constraint is a floor with no ceiling -- so `composer update` on an
+        // old installation pairs whatever module is on disk with the newest
+        // library. `saveNotification()` arrived in the module on 2024-12-03
+        // (103.4.65) and this call landed the day after, which has made every
+        // module below that version fatal here ever since.
+        //
+        // On the error path, which is the worst place to fatal: the call is
+        // reached because Mailchimp answered 4xx, so an install that cannot
+        // listen loses the message explaining the failure AND the request that
+        // was carrying it. A host that has no way to be notified is not an
+        // error to raise; it is a host to leave alone.
+        if ($this->helper && method_exists($this->helper, 'saveNotification')) {
             $this->helper->saveNotification($errors);
         }
         return $errors;

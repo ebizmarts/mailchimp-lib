@@ -355,13 +355,23 @@ class Mailchimp
             if ($this->storeURL) {
                 $curlinfo['storeURL'] = $this->storeURL;
             }
-            $curlinfo['time'] = $this->helper->getGmtDate();
+            if (method_exists($this->helper, 'getGmtDate')) {
+                $curlinfo['time'] = $this->helper->getGmtDate();
+            }
             $curlinfo['info']['total_time'] = $total_time;
             $curlinfo['info']['url'] = $this->_root . $url;
             $curlinfo['info']['method'] = $method;
             $curlinfo['info']['params'] = $params;
             $curlinfo['info']['response'] = $result;
-            $this->helper->saveNotification($curlinfo);
+            // Same guard and the same reason as the one in
+            // Mailchimp_Error::getFriendlyMessage(), one lane over: this is
+            // the call that succeeded rather than the one that failed, and a
+            // module that predates `saveNotification()` fatals on both. Which
+            // means, without this, the pairing takes down every API call an
+            // installation makes, not merely its reporting.
+            if (method_exists($this->helper, 'saveNotification')) {
+                $this->helper->saveNotification($curlinfo);
+            }
         }
 
         return $result;
