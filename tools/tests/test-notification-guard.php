@@ -72,6 +72,40 @@ class DatingHost
 }
 
 /**
+ * Every .php file under a directory, depth first.
+ *
+ * scandir() and recursion rather than the SPL iterators: this runner declares
+ * the same php >=5.2.0 the library does, and SPL was still build-optional
+ * before 5.3.
+ *
+ * @param  string $dir
+ * @return array
+ */
+function phpFilesIn($dir)
+{
+    $found = array();
+
+    foreach (scandir($dir) as $entry) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+
+        $path = $dir . '/' . $entry;
+
+        if (is_dir($path)) {
+            $found = array_merge($found, phpFilesIn($path));
+            continue;
+        }
+
+        if (substr($entry, -4) === '.php') {
+            $found[] = $path;
+        }
+    }
+
+    return $found;
+}
+
+/**
  * @param  object|null $helper
  * @return array  the reported payload, or the throwable that escaped
  */
@@ -141,11 +175,26 @@ check('the host is not notified',        count($notified) === 0);
 // test that needed the network to prove a guard would be skipped exactly when
 // it mattered. So the rule is asserted over the source instead: every call
 // this library makes on the host's helper has to be guarded on the method it
-// names, in every file, including ones added later.
+// names.
+//
+// Over every file under src/, not over the three that call the helper today.
+// A file added later is precisely the case this exists for, and a list
+// written by hand is the one thing it could never see.
+//
+// The match is per file, not per call site: a guard on a method counts for
+// that method anywhere in the same file. Reading a guard back to the call it
+// protects needs a parser, and this runner has none by design -- it declares
+// the same php >=5.2.0 the library does. So what is pinned here is narrower
+// than it looks, and worth saying plainly: no file calls a helper method it
+// has never checked for. The cases where that is weaker than per-call-site --
+// one method, two calls, one guard -- are exactly the sources as they stand.
 echo "every helper call in src is guarded on its own method\n";
+$root = dirname(dirname(__DIR__));
 $unguarded = array();
-foreach (array('src/Mailchimp.php', 'src/Mailchimp/Error.php', 'src/Mailchimp/Telemetry.php') as $file) {
-    $source = file_get_contents(dirname(dirname(__DIR__)) . '/' . $file);
+$scanned = 0;
+foreach (phpFilesIn($root . '/src') as $file) {
+    $scanned++;
+    $source = file_get_contents($file);
     if (!preg_match_all('/\$this->_?helper->([A-Za-z0-9_]+)\(/', $source, $matches)) {
         continue;
     }
@@ -153,10 +202,11 @@ foreach (array('src/Mailchimp.php', 'src/Mailchimp/Error.php', 'src/Mailchimp/Te
         if (strpos($source, "method_exists(\$this->helper, '" . $method . "')") === false
             && strpos($source, "method_exists(\$this->_helper, '" . $method . "')") === false
         ) {
-            $unguarded[] = $file . ' -> ' . $method . '()';
+            $unguarded[] = substr($file, strlen($root) + 1) . ' -> ' . $method . '()';
         }
     }
 }
+printf("  %d files scanned\n", $scanned);
 check('none found' . ($unguarded ? ': ' . implode(', ', $unguarded) : ''), $unguarded === array());
 
 echo "\n";
