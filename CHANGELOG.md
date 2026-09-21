@@ -1,5 +1,36 @@
 # Change Log
 
+## [3.0.53](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.53) (2026-09-21)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.52...3.0.53)
+
+**Fixed bugs:**
+
+- Notify only a host that can listen [\#96](https://github.com/ebizmarts/mailchimp-lib/pull/96)
+
+  `saveNotification()` belongs to the module, where it arrived on 2024-12-03 in
+  103.4.65; the calls to it landed here the day after, first tagged 3.0.42.
+  Composer cannot hold that pairing together -- a library cannot require a
+  minimum module version, and the module's constraint is a floor with no ceiling
+  -- so `composer update` on an installation below 103.4.65 has been pairing it
+  with a library that fatals on every API call ever since: on the answer, in
+  `Mailchimp::call()`, and on the failure, in
+  `Mailchimp_Error::getFriendlyMessage()`.
+
+  The error path is the worse of the two, because it is reached precisely when
+  Mailchimp answers 4xx: an installation that cannot listen lost the message
+  explaining the failure and the request that was carrying it.
+
+  Both call sites, and `getGmtDate()` beside them, are now guarded on the method
+  rather than on the helper -- the discipline the telemetry already followed in
+  `readContactAllowed()` and `readModuleVersion()`. A host with no way to be
+  notified is left alone rather than raised at. The rule is pinned by a gate that
+  walks every file under `src` and refuses a call on a helper method the file has
+  never checked for.
+
+  Nothing changes for a module that has the method: same payload, same call, same
+  order.
+
 ## [3.0.52](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.52) (2026-09-15)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.51...3.0.52)
