@@ -45,3 +45,10 @@ jobs:
       # and on the failure alike.
       - name: Test that the host is notified only when it can be
         run: php tools/tests/test-notification-guard.php
+
+      # The service status fails quietly in both directions: a claim that stops
+      # verifying leaves an installation syncing that was asked to pause, and a
+      # check that stops rejecting lets a forged claim pause a store. Neither
+      # raises anywhere a merchant or a log would show it.
+      - name: Test the service status
+        run: php tools/tests/test-service-status.php

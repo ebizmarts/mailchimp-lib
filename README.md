@@ -89,10 +89,84 @@ to reach the store.
 
 Reports go to `https://apps.ebizmarts.com/mc4magento/v1/qos`.
 
-Setting the environment variable `MC_TELEMETRY=0` switches reporting off
-entirely. `MC_TELEMETRY=force` skips the sampling so every eligible process
-reports, which exists so the feature can be verified without leaving cron
-running for hours; it changes nothing else.
+Setting the environment variable `MC_TELEMETRY=0` switches these reports off.
+It does not switch off the status check described below, only the fields of it
+that describe the store. `MC_TELEMETRY=force` skips the sampling so every
+eligible process reports, which exists so the feature can be verified without
+leaving cron running for hours; it changes nothing else.
+
+## Service status
+
+**From 3.0.54 the QoS service can return a service status, and the library
+honours it.** Reporting quality of service is one half; this is the other.
+
+### What it does
+
+While the service status pauses this installation, every API call fails before
+it leaves the store, with a `Mailchimp_Error` that says why and who to contact
+(mailchimp@help.ebizmarts.com), for example:
+
+> Mailchimp sync is paused by the service. Your data and settings are kept.
+> Email mailchimp@help.ebizmarts.com. Reference: lh12.
+
+Nothing is deleted: not data, not the API key, not the configuration. A pause
+lifts when the service sends a resume or when it expires, at most 24 hours
+after it was issued; until then it is sent again on every reply. A pause that
+was lifted is not applied again if a copy of it arrives later.
+
+A status can carry a start date. Until then calls keep working, and the host
+can read it with `Mailchimp::getServiceStatus()` to warn the merchant.
+`Mailchimp_ServiceStatus::report()` turns what that returns into the four
+`svc_*` fields below, for a host that reports them on its own channel.
+
+### How it arrives
+
+A status is a claim signed with Ed25519 and checked against two public keys
+pinned in `Mailchimp_ServiceStatus`. A claim that is not signed with one of
+them, is expired, or names another installation is ignored. It reaches the
+library in two ways:
+
+- in the reply to a report (see Reporting), and
+- from a **status check**: at most once an hour per API key, and again as soon
+  as the extension or library version changes, the library posts to
+  `https://apps.ebizmarts.com/mc4magento/v1/lib/hold`.
+
+The status check always sends:
+
+- `install_id`, `account_id`, `dc`, the extension version and the library
+  version;
+- what the library has stored right now: `svc_state` (`held`, `warning` or
+  `none`), `svc_ref`, `svc_code` and `svc_since`.
+
+Only while reports are on (not with `MC_TELEMETRY=0`) it also sends:
+
+- `domain`: the store's host and path, as in a report's `store_url`;
+- `first_payment` and `member_since`: the Mailchimp account's dates, as UTC
+  `YYYY-MM-DDTHH:MM:SSZ`, or null.
+
+Nothing else: no counts, no names, no contact details, no key.
+
+The status check runs whether or not reports are switched off, because an
+installation that is paused makes no API calls and so sends no reports. It has
+the same timeouts as a report (250 ms inside a web request, 2500 ms in a
+background process) and never raises.
+
+With `MC_TELEMETRY=0` the library does not read the account id from Mailchimp's
+answers, so the check sends it only when a stored claim carries it.
+
+### Where it is kept
+
+In one small file per API key and per system user in the system temp
+directory, readable only by that user. A file owned by another user is
+ignored. If the file cannot be written, or `open_basedir` leaves the temp
+directory out, the status still applies to the process that received it and
+the hourly check is skipped.
+
+### Requirements
+
+`sodium_crypto_sign_verify_detached()`: the sodium extension, which PHP
+includes from 7.2, or the `sodium_compat` polyfill. Without either, every
+status is ignored and no status check is made.
 
 ## License
 
