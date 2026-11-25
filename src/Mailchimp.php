@@ -14,6 +14,7 @@
 require_once 'Mailchimp/Abstract.php';
 require_once 'Mailchimp/Root.php';
 require_once 'Mailchimp/Telemetry.php';
+require_once 'Mailchimp/ServiceStatus.php';
 require_once 'Mailchimp/Automation.php';
 require_once 'Mailchimp/AutomationEmails.php';
 require_once 'Mailchimp/AutomationEmailsQueue.php';
@@ -87,6 +88,21 @@ class Mailchimp
      */
     protected $_telemetry = null;
 
+    /**
+     * @var Mailchimp_ServiceStatus
+     */
+    protected $_serviceStatus = null;
+
+    /**
+     * @var string|null installation id of the key in use
+     */
+    protected $_installId = null;
+
+    /**
+     * @var array install_id => dc, every key set in this process (capped)
+     */
+    protected $_installs = array();
+
 
     public $root;
     public $authorizedApps;
@@ -124,6 +140,8 @@ class Mailchimp
         $this->_ch = curl_init();
 
         $this->_telemetry = new Mailchimp_Telemetry();
+        $this->_serviceStatus = new Mailchimp_ServiceStatus();
+        $this->_telemetry->setServiceStatus($this->_serviceStatus);
         $this->_telemetry->setUserAgent('Ebizmart-MailChimp-PHP/3.0.0');
         curl_setopt($this->_ch, CURLOPT_USERAGENT, 'Ebizmart-MailChimp-PHP/3.0.0');
         curl_setopt($this->_ch, CURLOPT_HEADER, false);
@@ -206,6 +224,51 @@ class Mailchimp
         $this->_root = rtrim($this->_root, '/') . '/';
         curl_setopt($this->_ch, CURLOPT_USERPWD, "noname:" . $this->_apiKey);
         $this->_telemetry->switchKey($this->_apiKey, $dc);
+
+        $this->_installId = null;
+        if ($this->_apiKey !== '') {
+            $this->_installId = Mailchimp_Telemetry::installId($this->_apiKey);
+            if (isset($this->_installs[$this->_installId])
+                || count($this->_installs) < Mailchimp_ServiceStatus::MAX_CHECKS
+            ) {
+                $this->_installs[$this->_installId] = Mailchimp_Telemetry::validDc($dc);
+            }
+        }
+    }
+
+    /**
+     * The service status the QoS service returned for the key in use, or null
+     * when there is none.
+     *
+     * Also returned while it only warns (`blocks_from` still ahead), so the
+     * host can show the date; `blocking` says whether calls are paused yet.
+     * Mailchimp_ServiceStatus::report() turns it into the svc_* fields.
+     *
+     * @return array|null code, reason, ref, iat, exp, blocks_from, blocking, since
+     */
+    public function getServiceStatus()
+    {
+        if (!$this->_installId) {
+            return null;
+        }
+
+        return $this->_serviceStatus->get($this->_installId);
+    }
+
+    /**
+     * Hand this library a control the host received from the QoS service, for
+     * the key in use. It is verified here, never by the host.
+     *
+     * @param  mixed $control array claim, sig, kid
+     * @return bool whether it was applied
+     */
+    public function applyControl($control)
+    {
+        if (!$this->_installId) {
+            return false;
+        }
+
+        return $this->_serviceStatus->apply($control, $this->_installId);
     }
 
     /**
@@ -277,6 +340,11 @@ class Mailchimp
     }
     public function call($url,$params,$method=Mailchimp::GET)
     {
+        // Before anything is built: a paused installation sends nothing.
+        if ($this->_installId) {
+            $this->_serviceStatus->assertOpen($this->_installId, $this->_root . $url, $method);
+        }
+
         // Captured here, before the query string is appended below, so what is
         // recorded is the resource addressed and never the arguments.
         $telemetryPath = $url;
@@ -395,6 +463,24 @@ class Mailchimp
             // An error is not an Exception. Letting one escape a destructor
             // during shutdown is fatal, which is the one outcome this whole
             // path exists to avoid.
+        }
+
+        // After the report, whose reply may already have carried the answer.
+        // Rate-limited inside: at most once an hour per key.
+        try {
+            if ($this->_serviceStatus && $this->_telemetry) {
+                $cli = (PHP_SAPI === 'cli');
+                foreach ($this->_installs as $installId => $dc) {
+                    $identity = $this->_telemetry->identity($installId);
+                    $identity['install_id'] = $installId;
+                    $identity['dc'] = $dc;
+                    $this->_serviceStatus->check($identity, $cli);
+                }
+            }
+        } catch (Exception $e) {
+            // Same rule as above.
+        } catch (Throwable $t) {
+            // Same rule as above.
         }
     }
 }

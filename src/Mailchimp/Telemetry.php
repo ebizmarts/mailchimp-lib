@@ -282,6 +282,11 @@ class Mailchimp_Telemetry
     private $_forced = false;
 
     /**
+     * @var Mailchimp_ServiceStatus|null receives a control carried on a report's reply
+     */
+    private $_serviceStatus = null;
+
+    /**
      * Reads the operator escape hatch, and nothing else.
      *
      * Deliberately does no work: an installation that never reports should not
@@ -323,6 +328,91 @@ class Mailchimp_Telemetry
         if ($this->_moduleVersion === null) {
             $this->_moduleVersion = $this->readModuleVersion();
         }
+    }
+
+    /**
+     * Where a control carried on a report's reply goes.
+     *
+     * @param  Mailchimp_ServiceStatus $serviceStatus
+     * @return void
+     */
+    public function setServiceStatus($serviceStatus)
+    {
+        $this->_serviceStatus = $serviceStatus;
+    }
+
+    /**
+     * What the hourly status check sends besides the installation id and dc.
+     *
+     * account_id, module_version and lib_version answer whether or not
+     * reporting is on: the module version is read when the helper is set
+     * either way, and the account id is whatever this process learnt, or null.
+     *
+     * domain, first_payment and member_since only describe the store and the
+     * account, and the status does not need them, so they are added only while
+     * reporting is on. With MC_TELEMETRY=0 the keys are absent and the check
+     * sends none of them.
+     *
+     * @param  string $installId
+     * @return array account_id, module_version, lib_version; and, with reporting
+     *               on, domain, first_payment, member_since (each null if unknown)
+     */
+    public function identity($installId)
+    {
+        $bucket = isset($this->_buckets[$installId]) ? $this->_buckets[$installId] : null;
+
+        $identity = array(
+            'account_id'     => ($bucket && $bucket['account_id']) ? $bucket['account_id'] : null,
+            'module_version' => $this->moduleVersion(),
+            'lib_version'    => self::libVersion(),
+        );
+
+        if ($this->_enabled) {
+            $domain = $bucket ? self::domainKey($bucket['store_url']) : '';
+            $identity['domain']        = ($domain !== '') ? $domain : null;
+            $identity['first_payment'] = $bucket ? $bucket['first_payment'] : null;
+            $identity['member_since']  = $bucket ? $bucket['member_since'] : null;
+        }
+
+        return $identity;
+    }
+
+    /**
+     * A store URL reduced to the key the QoS service files it under: the host
+     * without `www.`, an optional port, and an optional path, lowercased, with
+     * no scheme, query or fragment. The same reduction the service applies to
+     * the `store_url` of a report, so the two name the store alike.
+     *
+     * @param  mixed $url
+     * @return string '' when there is no usable host
+     */
+    public static function domainKey($url)
+    {
+        if (!is_string($url)) {
+            return '';
+        }
+        $raw = trim($url);
+        $raw = preg_replace('#\A[a-z]+://#i', '', $raw);
+        $cut = strcspn($raw, '?#');
+        $raw = substr($raw, 0, $cut);
+
+        $slash = strpos($raw, '/');
+        $host  = ($slash === false) ? $raw : substr($raw, 0, $slash);
+        $path  = ($slash === false) ? '' : substr($raw, $slash);
+
+        $at = strrpos($host, '@');
+        if ($at !== false) {
+            $host = substr($host, $at + 1);
+        }
+        $host = strtolower(preg_replace('#\Awww\.#i', '', $host));
+        $host = preg_replace('#:(80|443)\z#', '', $host);
+        $path = strtolower(trim($path, '/'));
+
+        if ($host === '') {
+            return '';
+        }
+
+        return ($path !== '') ? $host . '/' . $path : $host;
     }
 
     /**
@@ -542,6 +632,8 @@ class Mailchimp_Telemetry
             'owner_email'       => null,
             'total_subscribers' => null,
             'pricing_plan_type'         => null,
+            'first_payment'          => null,
+            'member_since'           => null,
             'list_member_count'      => null,
             'list_unsubscribe_count' => null,
             'list_cleaned_count'     => null,
@@ -921,6 +1013,16 @@ class Mailchimp_Telemetry
         if (!$bucket['pricing_plan_type'] && isset($result['pricing_plan_type'])) {
             $bucket['pricing_plan_type'] = substr((string)$result['pricing_plan_type'], 0, 32);
         }
+
+        // When the account first paid and when it joined, for the hourly
+        // status check only (see identity()), never the report. As UTC
+        // `YYYY-MM-DDTHH:MM:SSZ`; anything that does not parse stays null.
+        if (!$bucket['first_payment'] && isset($result['first_payment'])) {
+            $bucket['first_payment'] = Mailchimp_ServiceStatus::isoUtc($result['first_payment']);
+        }
+        if (!$bucket['member_since'] && isset($result['member_since'])) {
+            $bucket['member_since'] = Mailchimp_ServiceStatus::isoUtc($result['member_since']);
+        }
     }
 
     /**
@@ -968,7 +1070,7 @@ class Mailchimp_Telemetry
             // its report -- silently, on a feature that only observes.
             $sent++;
             try {
-                $this->post($body, $cli);
+                $this->post($body, $cli, $bucket['install_id']);
             } catch (Exception $e) {
                 // Deliberately swallowed: see above.
             } catch (Throwable $t) {
@@ -1122,12 +1224,10 @@ class Mailchimp_Telemetry
         // one is account-wide and counts differently, and on a real account the
         // two differ by orders of magnitude rather than by a rounding error.
         //
-        // total_contacts INCLUDES cleaned. A consumer deriving the
-        // non-subscribed residual has to subtract cleaned explicitly, or it
-        // smuggles never-billed contacts into a billable figure. And even
-        // subtracted, the residual is an UPPER BOUND on transactional rather
-        // than transactional exactly, because pending and archived land in it
-        // too and archived are not billed.
+        // total_contacts is, as Mailchimp defines it, an approximate count of
+        // subscribed, unsubscribed and transactional contacts. It does NOT
+        // include cleaned, archived or pending contacts, nor those that need
+        // to be reconfirmed, so cleaned must not be subtracted from it.
         foreach (array(
             'list_member_count',
             'list_unsubscribe_count',
@@ -1317,11 +1417,17 @@ class Mailchimp_Telemetry
      * merchant's Mailchimp credentials, and those must never be presented to
      * anything but Mailchimp.
      *
+     * A 202 that carries a body is the QoS service handing back a service
+     * status for this installation; it goes to Mailchimp_ServiceStatus, which
+     * verifies it. Every other reply
+     * is read for its status only, as before.
+     *
      * @param  string $body
      * @param  bool   $cli
+     * @param  string $installId the bucket this report describes
      * @return void
      */
-    private function post($body, $cli)
+    private function post($body, $cli, $installId = null)
     {
         if (!function_exists('curl_init')) {
             return;
@@ -1374,6 +1480,13 @@ class Mailchimp_Telemetry
         // since what never arrives is exactly what the receiver cannot record.
         if ($body === false || $errno !== 0 || $status < 200 || $status > 299) {
             $this->_sendsFailed++;
+        } elseif ($status === 202 && $this->_serviceStatus && $installId && is_string($body) && $body !== ''
+            && strlen($body) <= Mailchimp_ServiceStatus::MAX_REPLY_BYTES
+        ) {
+            $reply = json_decode($body, true);
+            if (is_array($reply) && isset($reply['control'])) {
+                $this->_serviceStatus->apply($reply['control'], $installId);
+            }
         }
 
         // Guarded rather than removed: the library still declares php >=5.2.0,
