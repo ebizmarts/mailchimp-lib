@@ -346,6 +346,17 @@ class Mailchimp_ServiceStatus
             if ($seen !== null && !empty($seen['r']) && $claim['kind'] === self::KIND_PAUSE) {
                 return false;
             }
+            // The same, when nothing was stored for the resume to lift: a
+            // pause signed before a resume for its ref is stale. The service
+            // signs a resume after every signing of the pause it lifts, so a
+            // later signing of that ref (the pause applying again) still
+            // applies.
+            $lifted = isset($state['lifted']) && is_array($state['lifted']) ? $state['lifted'] : array();
+            if ($claim['kind'] === self::KIND_PAUSE && isset($claim['ref'], $lifted[$claim['ref']]['iat'])
+                && $claim['iat'] < (int)$lifted[$claim['ref']]['iat']
+            ) {
+                return false;
+            }
 
             if ($claim['kind'] === self::KIND_PAUSE) {
                 $stored = isset($state['control']['claim']) ? (string)$state['control']['claim'] : null;
@@ -363,12 +374,19 @@ class Mailchimp_ServiceStatus
                         $nonces[$nonce]['r'] = 1;
                     }
                 }
-                $lifted = self::storedNonce($state);
-                if ($lifted !== null && isset($nonces[$lifted]) && is_array($nonces[$lifted])) {
-                    $nonces[$lifted]['r'] = 1;
+                $storedNonce = self::storedNonce($state);
+                if ($storedNonce !== null && isset($nonces[$storedNonce]) && is_array($nonces[$storedNonce])) {
+                    $nonces[$storedNonce]['r'] = 1;
                 }
                 $state['control'] = null;
                 $state['since']   = null;
+                if (isset($claim['ref'])) {
+                    $known = isset($lifted[$claim['ref']]['iat']) ? (int)$lifted[$claim['ref']]['iat'] : 0;
+                    $lifted[$claim['ref']] = array(
+                        'iat' => max($known, $claim['iat']),
+                        'exp' => max($known, $claim['iat']) + self::MAX_LIFETIME,
+                    );
+                }
             }
             $nonces[$claim['nonce']] = array(
                 'h'   => $hash,
@@ -377,6 +395,7 @@ class Mailchimp_ServiceStatus
             );
 
             $state['nonces'] = self::pruneNonces($nonces, $now);
+            $state['lifted'] = self::pruneNonces($lifted, $now);
             $this->save($installId, $state, $now);
 
             return true;

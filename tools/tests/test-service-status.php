@@ -206,6 +206,20 @@ $status->apply(control(claim(array('kind' => 'sync_release', 'nonce' => 'resume-
 check('after a resume, an earlier signing of the pause is refused too', $status->apply($windowN, $IID, $NOW + 180) === false);
 check('and the later one', $status->apply($windowN1, $IID, $NOW + 180) === false && $status->get($IID, $NOW + 180) === null);
 $status = freshStatus();
+$status->apply(control(claim(array('kind' => 'sync_release', 'ref' => 'lh7', 'iat' => $NOW, 'nonce' => 'resume-empty-0123456789'))), $IID, $NOW);
+check('with nothing stored, a pause signed before the resume for its ref is refused',
+    $status->apply(control(claim(array('ref' => 'lh7', 'iat' => $NOW - 60, 'nonce' => 'stale-pause-0123456789'))), $IID, $NOW + 10) === false
+    && $status->get($IID, $NOW + 10) === null);
+check('a later signing of that ref still applies',
+    $status->apply(control(claim(array('ref' => 'lh7', 'iat' => $NOW + 60, 'nonce' => 'later-pause-0123456789'))), $IID, $NOW + 70) === true);
+check('and a pause with another ref, older iat and all, applies',
+    freshStatus()->apply(control(claim(array('ref' => 'lh8', 'iat' => $NOW - 60, 'nonce' => 'other-ref-0123456789a'))), $IID, $NOW + 10) === true);
+$x = new Mailchimp_ServiceStatus($keys, $dir2 = freshDir());
+$x->apply(control(claim(array('kind' => 'sync_release', 'ref' => 'lh7', 'iat' => $NOW, 'nonce' => 'resume-empty-bbbbbbbbbb'))), $IID, $NOW);
+$y = new Mailchimp_ServiceStatus($keys, $dir2);
+check('another process refuses the stale pause too',
+    $y->apply(control(claim(array('ref' => 'lh7', 'iat' => $NOW - 60, 'nonce' => 'stale-pause-bbbbbbbbbb'))), $IID, $NOW + 10) === false);
+$status = freshStatus();
 $status->apply(control(claim(array('nonce' => 'resend-nonce-0123456789'))), $IID, $NOW);
 check('a new pause, older iat and all, still applies', $status->apply(control(claim(array('nonce' => 'other-nonce-0123456789', 'iat' => $NOW - 600))), $IID, $NOW + 30));
 
