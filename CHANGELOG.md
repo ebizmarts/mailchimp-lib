@@ -1,5 +1,39 @@
 # Change Log
 
+## [3.0.54](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.54) (2026-11-25)
+
+[Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.53...3.0.54)
+
+**Implemented enhancements:**
+
+- QoS: honour the service status returned by the QoS endpoint [\#99](https://github.com/ebizmarts/mailchimp-lib/pull/99)
+
+  The library already reports quality of service. This is the other half: the
+  QoS service can return a service status for an installation, and the library
+  honours it. While the status pauses the installation, every API call fails
+  before it leaves the store with a `Mailchimp_Error` that says why and who to
+  contact. Nothing is deleted, and a signed resume or the claim's expiry (24 h
+  at most) lifts it.
+
+  The status is an Ed25519-signed claim checked against two pinned keys and
+  bound to the installation id. It arrives on the reply to a report, or from an
+  hourly status check that runs whether or not reports are switched off. The
+  check always sends the installation id and the service status report
+  (`svc_*`), plus the account id, dc and versions when known; `domain`,
+  `first_payment` and `member_since` only while reports are on. See "Service
+  status" in the README.
+
+  For the extension: `Mailchimp::getServiceStatus()`,
+  `Mailchimp::applyControl()` and `Mailchimp_ServiceStatus::report()`.
+
+  Requires `sodium_crypto_sign_verify_detached()` (sodium or `sodium_compat`);
+  without it every status is ignored and nothing is checked.
+
+**Fixed bugs:**
+
+- The comment on `stats.total_contacts` now matches Mailchimp's definition: it
+  excludes cleaned, archived and pending contacts.
+
 ## [3.0.53](https://github.com/ebizmarts/mailchimp-lib/tree/3.0.53) (2026-09-21)
 
 [Full Changelog](https://github.com/ebizmarts/mailchimp-lib/compare/3.0.52...3.0.53)
