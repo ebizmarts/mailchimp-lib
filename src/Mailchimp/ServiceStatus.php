@@ -63,6 +63,14 @@ class Mailchimp_ServiceStatus
     /** Longest allowed claim lifetime, exp - iat. */
     const MAX_LIFETIME = 86400;
 
+    /**
+     * Shortest time between two checks when only the version changed. Two
+     * installations that share a key, a server and a temp directory but run
+     * different versions (staging and production) would otherwise ask on
+     * every request, each undoing the other's version.
+     */
+    const VERSION_RECHECK = 300;
+
     /** Allowed clock skew for a claim issued, or a check stored, "in the future". */
     const MAX_FUTURE_IAT = 300;
 
@@ -331,9 +339,10 @@ class Mailchimp_ServiceStatus
             if ($seen !== null && (!isset($seen['h']) || $seen['h'] !== $hash)) {
                 return false;
             }
-            // A pause lifted by a resume stays lifted. A copy of the service
-            // that has not seen the resume yet may still send it; a new pause
-            // carries a new nonce, so it still applies.
+            // A pause lifted by a resume stays lifted: the one stored and any
+            // earlier signing of it. A copy of the service that has not seen
+            // the resume yet may still send one; a new pause carries a new
+            // nonce, so it still applies.
             if ($seen !== null && !empty($seen['r']) && $claim['kind'] === self::KIND_PAUSE) {
                 return false;
             }
@@ -349,6 +358,11 @@ class Mailchimp_ServiceStatus
                     'kid'   => (string)$control['kid'],
                 );
             } else {
+                foreach ($nonces as $nonce => $entry) {
+                    if (is_array($entry) && isset($entry['k']) && $entry['k'] === 'p') {
+                        $nonces[$nonce]['r'] = 1;
+                    }
+                }
                 $lifted = self::storedNonce($state);
                 if ($lifted !== null && isset($nonces[$lifted]) && is_array($nonces[$lifted])) {
                     $nonces[$lifted]['r'] = 1;
@@ -356,7 +370,11 @@ class Mailchimp_ServiceStatus
                 $state['control'] = null;
                 $state['since']   = null;
             }
-            $nonces[$claim['nonce']] = array('h' => $hash, 'exp' => $claim['exp']);
+            $nonces[$claim['nonce']] = array(
+                'h'   => $hash,
+                'exp' => $claim['exp'],
+                'k'   => ($claim['kind'] === self::KIND_PAUSE) ? 'p' : 'r',
+            );
 
             $state['nonces'] = self::pruneNonces($nonces, $now);
             $this->save($installId, $state, $now);
@@ -371,8 +389,8 @@ class Mailchimp_ServiceStatus
 
     /**
      * Ask the QoS service for this installation's status, at most once an
-     * hour per key, and again as soon as the extension or library version
-     * changes.
+     * hour per key, and again when the extension or library version changes,
+     * at most once every VERSION_RECHECK seconds.
      *
      * Always sent: install_id, account_id, dc, module_version, lib_version and
      * the service status report (svc_state, svc_ref, svc_code, svc_since).
@@ -413,7 +431,8 @@ class Mailchimp_ServiceStatus
                 $checked = 0;
             }
             $sameVersions = isset($state['versions']) && $state['versions'] === $versions;
-            if ($checked && $sameVersions && $now - $checked < self::CHECK_INTERVAL) {
+            $wait         = $sameVersions ? self::CHECK_INTERVAL : self::VERSION_RECHECK;
+            if ($checked && $now - $checked < $wait) {
                 return;
             }
             $state['checked_at'] = $now;
@@ -491,6 +510,11 @@ class Mailchimp_ServiceStatus
     /**
      * A date as UTC `YYYY-MM-DDTHH:MM:SSZ`, or null when it cannot be read.
      *
+     * Only an ISO 8601 date-time that states its offset (`Z`, `+00:00`,
+     * `-0300`) is read. Without one, strtotime() would take the server's time
+     * zone, and the same account would report different dates from different
+     * servers.
+     *
      * @param  mixed $value
      * @return string|null
      */
@@ -501,6 +525,9 @@ class Mailchimp_ServiceStatus
         }
         if (preg_match('/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\z/', $value)) {
             return $value;
+        }
+        if (!preg_match('/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})\z/', $value)) {
+            return null;
         }
         $time = strtotime($value);
 
@@ -699,7 +726,7 @@ class Mailchimp_ServiceStatus
     }
 
     /**
-     * @param  array $nonces nonce => array(h, exp, r?)
+     * @param  array $nonces nonce => array(h, exp, k: p pause / r resume, r?: lifted)
      * @param  int   $now
      * @return array
      */

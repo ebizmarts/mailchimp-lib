@@ -127,20 +127,22 @@ them, is expired, or names another installation is ignored. It reaches the
 library in two ways:
 
 - in the reply to a report (see Reporting), and
-- from a **status check**: at most once an hour per API key, and again as soon
-  as the extension or library version changes, the library posts to
-  `https://apps.ebizmarts.com/mc4magento/v1/lib/hold`.
+- from a **status check**: at most once an hour per API key, and again when
+  the extension or library version changes (at most once every 5 minutes), the
+  library posts to `https://apps.ebizmarts.com/mc4magento/v1/lib/hold`.
 
 The status check always sends:
 
-- `install_id`, `account_id`, `dc`, the extension version and the library
-  version;
+- `install_id`;
+- `account_id`, `dc`, the extension version and the library version, each
+  when it is known;
 - what the library has stored right now: `svc_state` (`held`, `warning` or
   `none`), `svc_ref`, `svc_code` and `svc_since`.
 
 Only while reports are on (not with `MC_TELEMETRY=0`) it also sends:
 
-- `domain`: the store's host and path, as in a report's `store_url`;
+- `domain`: the store's host and path, as in a report's `store_url`, or null
+  when the process has no store URL;
 - `first_payment` and `member_since`: the Mailchimp account's dates, as UTC
   `YYYY-MM-DDTHH:MM:SSZ`, or null.
 

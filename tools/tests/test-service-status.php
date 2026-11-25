@@ -197,6 +197,16 @@ $x->apply($paused, $IID, $NOW);
 $x->apply(control(claim(array('kind' => 'sync_release', 'nonce' => 'resume-nonce-0123456789'))), $IID, $NOW + 10);
 $y = new Mailchimp_ServiceStatus($keys, $dir);
 check('another process refuses it too', $y->apply($paused, $IID, $NOW + 20) === false && $y->get($IID, $NOW + 20) === null);
+$status = freshStatus();
+$windowN  = control(claim(array('nonce' => 'window-n-0123456789ab')));
+$windowN1 = control(claim(array('nonce' => 'window-n1-0123456789a')));
+$status->apply($windowN, $IID, $NOW);
+$status->apply($windowN1, $IID, $NOW + 60);
+$status->apply(control(claim(array('kind' => 'sync_release', 'nonce' => 'resume-n1-0123456789'))), $IID, $NOW + 120);
+check('after a resume, an earlier signing of the pause is refused too', $status->apply($windowN, $IID, $NOW + 180) === false);
+check('and the later one', $status->apply($windowN1, $IID, $NOW + 180) === false && $status->get($IID, $NOW + 180) === null);
+$status = freshStatus();
+$status->apply(control(claim(array('nonce' => 'resend-nonce-0123456789'))), $IID, $NOW);
 check('a new pause, older iat and all, still applies', $status->apply(control(claim(array('nonce' => 'other-nonce-0123456789', 'iat' => $NOW - 600))), $IID, $NOW + 30));
 
 echo "two processes\n";
@@ -257,6 +267,10 @@ check('a Mailchimp date becomes UTC Z', Mailchimp_ServiceStatus::isoUtc('2015-08
 check('an offset is converted to UTC', Mailchimp_ServiceStatus::isoUtc('2015-08-12T16:14:42-03:00') === '2015-08-12T19:14:42Z');
 check('already in the form, kept', Mailchimp_ServiceStatus::isoUtc('2010-01-01T23:59:59Z') === '2010-01-01T23:59:59Z');
 check('an empty first_payment is null', Mailchimp_ServiceStatus::isoUtc('') === null);
+check('a date without an offset is null, not the server time zone', Mailchimp_ServiceStatus::isoUtc('2015-08-12T16:14:42') === null
+    && Mailchimp_ServiceStatus::isoUtc('2015-08-12 16:14:42') === null && Mailchimp_ServiceStatus::isoUtc('2015-08-12') === null);
+check('an offset without a colon is read', Mailchimp_ServiceStatus::isoUtc('2015-08-12T16:14:42+0000') === '2015-08-12T16:14:42Z');
+check('fractional seconds are dropped', Mailchimp_ServiceStatus::isoUtc('2015-08-12T16:14:42.123+00:00') === '2015-08-12T16:14:42Z');
 check('garbage is null', Mailchimp_ServiceStatus::isoUtc('not a date') === null && Mailchimp_ServiceStatus::isoUtc(12) === null);
 foreach (array(
     'https://www.Shop.example.com/'          => 'shop.example.com',
@@ -455,18 +469,29 @@ $h6 = new Mailchimp_ServiceStatus($keys, $dir, $url);
 $before = count(requests());
 $h6->check($identity, true, $t);
 $h6->check(array_merge($identity, array('module_version' => '103.4.89')), true, $t + 60);
-check('a new extension version checks again at once', count(requests()) === $before + 2);
-$h6->check(array_merge($identity, array('module_version' => '103.4.89')), true, $t + 120);
-check('but only once', count(requests()) === $before + 2);
-$h6->check(array_merge($identity, array('module_version' => '103.4.89', 'lib_version' => '3.0.55')), true, $t + 180);
+check('a new extension version does not check within 5 minutes', count(requests()) === $before + 1);
+$h6->check(array_merge($identity, array('module_version' => '103.4.89')), true, $t + 300);
+check('it checks again after 5 minutes', count(requests()) === $before + 2);
+$h6->check(array_merge($identity, array('module_version' => '103.4.89')), true, $t + 400);
+check('and then not until the hour', count(requests()) === $before + 2);
+$h6->check(array_merge($identity, array('module_version' => '103.4.89', 'lib_version' => '3.0.55')), true, $t + 600);
 check('a new library version too', count(requests()) === $before + 3);
+$before = count(requests());
+$shared = freshDir();
+$stagingIdentity = array_merge($identity, array('module_version' => '103.4.90'));
+for ($i = 0; $i < 10; $i++) {
+    $box = new Mailchimp_ServiceStatus($keys, $shared, $url);
+    $box->check(($i % 2) ? $stagingIdentity : $identity, true, $t + 30 * $i);
+}
+check('two versions sharing a key and a temp directory ask once in 5 minutes, not on every request', count(requests()) === $before + 1);
 $files = glob($dir . '/mc4magento-status-*.json');
 $state = json_decode(file_get_contents($files[0]), true);
 $state['checked_at'] = $t + 10 * 365 * 86400;
 file_put_contents($files[0], json_encode($state));
+$before = count(requests());
 $h7 = new Mailchimp_ServiceStatus($keys, $dir, $url);
-$h7->check(array_merge($identity, array('module_version' => '103.4.89', 'lib_version' => '3.0.55')), true, $t + 240);
-check('a checked_at far ahead of the clock does not stop the check', count(requests()) === $before + 4);
+$h7->check(array_merge($identity, array('module_version' => '103.4.89', 'lib_version' => '3.0.55')), true, $t + 900);
+check('a checked_at far ahead of the clock does not stop the check', count(requests()) === $before + 1);
 
 $before = count(requests());
 $h8 = new Mailchimp_ServiceStatus($keys, freshDir(), $url);
